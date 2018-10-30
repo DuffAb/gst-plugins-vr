@@ -38,8 +38,8 @@
 GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);
 
 G_DEFINE_TYPE_WITH_CODE (Gst3DCameraArcball, gst_3d_camera_arcball,
-    GST_3D_TYPE_CAMERA, GST_DEBUG_CATEGORY_INIT (gst_3d_camera_arcball_debug,
-        "3dcamera_arcball", 0, "camera_arcball"));
+                         GST_3D_TYPE_CAMERA, GST_DEBUG_CATEGORY_INIT (gst_3d_camera_arcball_debug,
+                             "3dcamera_arcball", 0, "camera_arcball"));
 
 
 static void gst_3d_camera_arcball_update_view (Gst3DCamera * cam);
@@ -53,8 +53,8 @@ gst_3d_camera_arcball_init (Gst3DCameraArcball * self)
   self->scroll_speed = 0.03;
   self->rotation_speed = 0.002;
 
-  self->theta = 5.0;
-  self->phi = 5.0;
+  self->theta = 5.0;//90.0 与y轴的夹角，与center_distance结合用于确定眼睛的位置
+  self->phi = 5.0;//0.00 与x轴的夹角，与center_distance结合用于确定眼睛的位置
 
   self->zoom_step = 0.95;
   self->min_fov = 45;
@@ -82,6 +82,7 @@ gst_3d_camera_arcball_finalize (GObject * object)
 static void
 gst_3d_camera_arcball_class_init (Gst3DCameraArcballClass * klass)
 {
+  // g_print ("gst_3d_camera_arcball_class_init.\n");
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   gobject_class->finalize = gst_3d_camera_arcball_finalize;
   Gst3DCameraClass *camera_class = GST_3D_CAMERA_CLASS (klass);
@@ -125,6 +126,7 @@ gst_3d_camera_arcball_update_view (Gst3DCamera * cam)
 
   GST_LOG_OBJECT (self, "arcball radius = %f fov %f", radius, cam->fov);
 
+  // 确定摄像头的位置
   graphene_vec3_init (&cam->eye,
       radius * sin (self->theta) * cos (self->phi),
       radius * -cos (self->theta),
@@ -151,66 +153,68 @@ static void
 gst_3d_camera_arcball_navigation_event (Gst3DCamera * cam, GstEvent * event)
 {
   GstNavigationEventType event_type = gst_navigation_event_get_type (event);
+
+  // 返回 - 事件的结构. 该结构仍归事件所有,这意味着不应释放它,并且当您释放事件时指针变为无效,多线程安全
   GstStructure *structure = (GstStructure *) gst_event_get_structure (event);
 
   Gst3DCameraArcball *self = GST_3D_CAMERA_ARCBALL (cam);
 
   switch (event_type) {
-    case GST_NAVIGATION_EVENT_MOUSE_MOVE:{
-      /* hanlde the mouse motion for zooming and rotating the view */
-      gdouble x, y;
-      gst_structure_get_double (structure, "pointer_x", &x);
-      gst_structure_get_double (structure, "pointer_y", &y);
+  case GST_NAVIGATION_EVENT_MOUSE_MOVE: {
+    /* hanlde the mouse motion for zooming and rotating the view */
+    gdouble x, y;
+    gst_structure_get_double (structure, "pointer_x", &x);
+    gst_structure_get_double (structure, "pointer_y", &y);
 
-      gdouble dx, dy;
-      dx = x - cam->cursor_last_x;
-      dy = y - cam->cursor_last_y;
+    gdouble dx, dy;
+    dx = x - cam->cursor_last_x;
+    dy = y - cam->cursor_last_y;
 
-      if (cam->pressed_mouse_button == 1) {
-        GST_DEBUG ("Rotating [%fx%f]", dx, dy);
-        gst_3d_camera_arcball_rotate (self, dx, dy);
+    if (cam->pressed_mouse_button == 1) {
+      GST_DEBUG ("Rotating [%fx%f]", dx, dy);
+      gst_3d_camera_arcball_rotate (self, dx, dy);
+    }
+    cam->cursor_last_x = x;
+    cam->cursor_last_y = y;
+    break;
+  }
+  case GST_NAVIGATION_EVENT_MOUSE_BUTTON_RELEASE: {
+    gint button;
+    Gst3DCamera * cam = GST_3D_CAMERA (self);
+
+    gst_structure_get_int (structure, "button", &button);
+    cam->pressed_mouse_button = 0;
+
+    if (button == 1) {
+      /* first mouse button release */
+      gst_structure_get_double (structure, "pointer_x", &cam->cursor_last_x);
+      gst_structure_get_double (structure, "pointer_y", &cam->cursor_last_y);
+    } else if (button == 4 || button == 6) {
+      /* wheel up */
+      //gst_3d_camera_arcball_translate (self, -1.0);
+      if (cam->fov > self->min_fov) {
+        cam->fov *= self->zoom_step;
+        cam->fov = MAX (self->min_fov, cam->fov);
+        gst_3d_camera_update_view (cam);
       }
-      cam->cursor_last_x = x;
-      cam->cursor_last_y = y;
-      break;
-    }
-    case GST_NAVIGATION_EVENT_MOUSE_BUTTON_RELEASE:{
-      gint button;
-      Gst3DCamera * cam = GST_3D_CAMERA (self);
-
-      gst_structure_get_int (structure, "button", &button);
-      cam->pressed_mouse_button = 0;
-
-      if (button == 1) {
-        /* first mouse button release */
-        gst_structure_get_double (structure, "pointer_x", &cam->cursor_last_x);
-        gst_structure_get_double (structure, "pointer_y", &cam->cursor_last_y);
-      } else if (button == 4 || button == 6) {
-        /* wheel up */
-        //gst_3d_camera_arcball_translate (self, -1.0);
-        if (cam->fov > self->min_fov) {
-          cam->fov *= self->zoom_step;
-          cam->fov = MAX (self->min_fov, cam->fov);
-          gst_3d_camera_update_view (cam);
-        }
-      } else if (button == 5 || button == 7) {
-        /* wheel down */
-        //gst_3d_camera_arcball_translate (self, 1.0);
-        if (cam->fov < self->max_fov) {
-          cam->fov /= self->zoom_step;
-          cam->fov = MIN (self->max_fov, cam->fov);
-          gst_3d_camera_update_view (cam);
-        }
+    } else if (button == 5 || button == 7) {
+      /* wheel down */
+      //gst_3d_camera_arcball_translate (self, 1.0);
+      if (cam->fov < self->max_fov) {
+        cam->fov /= self->zoom_step;
+        cam->fov = MIN (self->max_fov, cam->fov);
+        gst_3d_camera_update_view (cam);
       }
-      break;
     }
-    case GST_NAVIGATION_EVENT_MOUSE_BUTTON_PRESS:{
-      gint button;
-      gst_structure_get_int (structure, "button", &button);
-      cam->pressed_mouse_button = button;
-      break;
-    }
-    default:
-      break;
+    break;
+  }
+  case GST_NAVIGATION_EVENT_MOUSE_BUTTON_PRESS: {
+    gint button;
+    gst_structure_get_int (structure, "button", &button);
+    cam->pressed_mouse_button = button;
+    break;
+  }
+  default:
+    break;
   }
 }

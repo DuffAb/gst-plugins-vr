@@ -36,7 +36,7 @@
 GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);
 
 G_DEFINE_TYPE_WITH_CODE (Gst3DMesh, gst_3d_mesh, GST_TYPE_OBJECT,
-    GST_DEBUG_CATEGORY_INIT (gst_3d_mesh_debug, "3dmesh", 0, "mesh"));
+                         GST_DEBUG_CATEGORY_INIT (gst_3d_mesh_debug, "3dmesh", 0, "mesh"));
 
 void
 gst_3d_mesh_init (Gst3DMesh * self)
@@ -57,7 +57,7 @@ gst_3d_mesh_new (GstGLContext * context)
 
 Gst3DMesh *
 gst_3d_mesh_new_sphere (GstGLContext * context, float radius, unsigned stacks,
-    unsigned slices)
+                        unsigned slices)
 {
   g_return_val_if_fail (GST_IS_GL_CONTEXT (context), NULL);
   Gst3DMesh *mesh = gst_3d_mesh_new (context);
@@ -69,6 +69,7 @@ gst_3d_mesh_new_sphere (GstGLContext * context, float radius, unsigned stacks,
 Gst3DMesh *
 gst_3d_mesh_new_plane (GstGLContext * context, float aspect)
 {
+  // g_print ("gst_3d_mesh_new_plane aspect:%f.\n", aspect);
   g_return_val_if_fail (GST_IS_GL_CONTEXT (context), NULL);
   Gst3DMesh *mesh = gst_3d_mesh_new (context);
   gst_3d_mesh_init_buffers (mesh);
@@ -78,8 +79,7 @@ gst_3d_mesh_new_plane (GstGLContext * context, float aspect)
 
 
 Gst3DMesh *
-gst_3d_mesh_new_point_plane (GstGLContext * context, unsigned width,
-    unsigned height)
+gst_3d_mesh_new_point_plane (GstGLContext * context, unsigned width, unsigned height)
 {
   g_return_val_if_fail (GST_IS_GL_CONTEXT (context), NULL);
   Gst3DMesh *mesh = gst_3d_mesh_new (context);
@@ -90,7 +90,7 @@ gst_3d_mesh_new_point_plane (GstGLContext * context, unsigned width,
 
 Gst3DMesh *
 gst_3d_mesh_new_line (GstGLContext * context, graphene_vec3_t * from,
-    graphene_vec3_t * to, graphene_vec3_t * color)
+                      graphene_vec3_t * to, graphene_vec3_t * color)
 {
   g_return_val_if_fail (GST_IS_GL_CONTEXT (context), NULL);
   Gst3DMesh *mesh = gst_3d_mesh_new (context);
@@ -166,9 +166,9 @@ gst_3d_mesh_init_buffers (Gst3DMesh * self)
 
   GstGLFuncs *gl = self->context->gl_vtable;
 
-  gl->GenVertexArrays (1, &self->vao);
-  gl->BindVertexArray (self->vao);
-  gl->GenBuffers (1, &self->vbo_indices);
+  gl->GenVertexArrays (1, &self->vao);//创建顶点数组对象(Vertex Array Object)
+  gl->BindVertexArray (self->vao);    //绑定顶点数组对象
+  gl->GenBuffers (1, &self->vbo_indices);//创建索引缓冲区对象(Element Buffer Object-EBO/Index Buffer Object-IBO)
 }
 
 void
@@ -189,16 +189,14 @@ gst_3d_mesh_bind_shader (Gst3DMesh * self, Gst3DShader * shader)
   for (l = self->attribute_buffers; l != NULL; l = l->next) {
     struct Gst3DAttributeBuffer *buf = (struct Gst3DAttributeBuffer *) l->data;
     GST_DEBUG ("%s: location: %d length: %d size: %zu", buf->name,
-        buf->location, buf->vector_length, buf->element_size);
+               buf->location, buf->vector_length, buf->element_size);
 
     gl->BindBuffer (GL_ARRAY_BUFFER, buf->location);
 
-    GLint attrib_location =
-        gst_gl_shader_get_attribute_location (shader->shader, buf->name);
+    GLint attrib_location = gst_gl_shader_get_attribute_location (shader->shader, buf->name);
 
     if (attrib_location != -1) {
-      gl->VertexAttribPointer (attrib_location, buf->vector_length, GL_FLOAT,
-          GL_FALSE, 0, 0);
+      gl->VertexAttribPointer (attrib_location, buf->vector_length, GL_FLOAT, GL_FALSE, 0, 0);
       gl->EnableVertexAttribArray (attrib_location);
     } else {
       GST_WARNING ("could not find attribute %s in shader.", buf->name);
@@ -219,6 +217,7 @@ gst_3d_mesh_unbind_buffers (Gst3DMesh * self)
 void
 gst_3d_mesh_draw (Gst3DMesh * self)
 {
+  // g_print ("gst_3d_mesh_draw self->index_size:%d.\n", self->index_size);
   GstGLFuncs *gl = self->context->gl_vtable;
   gl->DrawElements (self->draw_mode, self->index_size, GL_UNSIGNED_SHORT, 0);
 }
@@ -239,34 +238,32 @@ gst_3d_mesh_draw_arrays (Gst3DMesh * self)
 
 void
 gst_3d_mesh_append_attribute_buffer (Gst3DMesh * self, const gchar * name,
-    size_t element_size, guint vector_length, GLfloat * vertices)
+                                     size_t element_size, guint vector_length, GLfloat * vertices)
 {
-  struct Gst3DAttributeBuffer *attrib_buffer =
-      malloc (sizeof (struct Gst3DAttributeBuffer));
+  struct Gst3DAttributeBuffer *attrib_buffer = malloc (sizeof (struct Gst3DAttributeBuffer));
 
   GstGLFuncs *gl = self->context->gl_vtable;
 
-  attrib_buffer->name = name;
-  attrib_buffer->element_size = element_size;
-  attrib_buffer->vector_length = vector_length;
+  attrib_buffer->name = name;                   //shader中变量的名称(字符串)
+  attrib_buffer->element_size = element_size;   //每个元素的大小 eg. sizeof (GLfloat)
+  attrib_buffer->vector_length = vector_length; //
 
   gl->GenBuffers (1, &attrib_buffer->location);
 
-  GST_DEBUG ("generated %s buffer #%d", attrib_buffer->name,
-      attrib_buffer->location);
+  GST_DEBUG ("generated %s buffer #%d", attrib_buffer->name, attrib_buffer->location);
 
   gl->BindBuffer (GL_ARRAY_BUFFER, attrib_buffer->location);
-  gl->BufferData (GL_ARRAY_BUFFER,
-      self->vertex_count * attrib_buffer->vector_length *
-      attrib_buffer->element_size, vertices, GL_STATIC_DRAW);
+  gl->BufferData (GL_ARRAY_BUFFER, //顶点数据属性
+                  self->vertex_count * attrib_buffer->vector_length * attrib_buffer->element_size, vertices, //存储数据的总数量 元素总数*单位元素存储空间
+                  GL_STATIC_DRAW);//设置分配数据之后的读取和写入方式
 
-  self->attribute_buffers =
-      g_list_append (self->attribute_buffers, attrib_buffer);
+  self->attribute_buffers = g_list_append (self->attribute_buffers, attrib_buffer);//将 attrib_buffer 添加到 attribute_buffers(GList)中
 }
 
 void
 gst_3d_mesh_upload_plane (Gst3DMesh * self, float aspect)
 {
+  // g_print ("gst_3d_mesh_upload_plane aspect:%f.\n", aspect);
   GstGLFuncs *gl = self->context->gl_vtable;
 
   /* *INDENT-OFF* */
@@ -295,8 +292,7 @@ gst_3d_mesh_upload_plane (Gst3DMesh * self, float aspect)
   // index
   self->index_size = sizeof (indices);  // /sizeof(indices[0])
   gl->BindBuffer (GL_ELEMENT_ARRAY_BUFFER, self->vbo_indices);
-  gl->BufferData (GL_ELEMENT_ARRAY_BUFFER, self->index_size, indices,
-      GL_STATIC_DRAW);
+  gl->BufferData (GL_ELEMENT_ARRAY_BUFFER, self->index_size, indices, GL_STATIC_DRAW);
 }
 
 void
@@ -391,21 +387,19 @@ gst_3d_mesh_upload_cube (Gst3DMesh * self)
   self->vertex_count = 4 * 6;
   self->draw_mode = GL_TRIANGLES;
 
-  gst_3d_mesh_append_attribute_buffer (self, "position", sizeof (GLfloat), 3,
-      positions);
+  gst_3d_mesh_append_attribute_buffer (self, "position", sizeof (GLfloat), 3, positions);
   gst_3d_mesh_append_attribute_buffer (self, "uv", sizeof (GLfloat), 2, uvs);
 
   // index
   self->index_size = sizeof (indices);
   gl->BindBuffer (GL_ELEMENT_ARRAY_BUFFER, self->vbo_indices);
-  gl->BufferData (GL_ELEMENT_ARRAY_BUFFER, self->index_size, indices,
-      GL_STATIC_DRAW);
+  gl->BufferData (GL_ELEMENT_ARRAY_BUFFER, self->index_size, indices, GL_STATIC_DRAW);
 }
 
 
 void
 gst_3d_mesh_upload_line (Gst3DMesh * self, graphene_vec3_t * from,
-    graphene_vec3_t * to, graphene_vec3_t * color)
+                         graphene_vec3_t * to, graphene_vec3_t * color)
 {
   GstGLFuncs *gl = self->context->gl_vtable;
 
@@ -425,25 +419,22 @@ gst_3d_mesh_upload_line (Gst3DMesh * self, graphene_vec3_t * from,
   self->vertex_count = 2;
   self->draw_mode = GL_LINES;
 
-  gst_3d_mesh_append_attribute_buffer (self, "position", sizeof (GLfloat), 4,
-      vertices);
-  gst_3d_mesh_append_attribute_buffer (self, "color", sizeof (GLfloat), 3,
-      colors);
+  gst_3d_mesh_append_attribute_buffer (self, "position", sizeof (GLfloat), 4, vertices);
+  gst_3d_mesh_append_attribute_buffer (self, "color", sizeof (GLfloat), 3, colors);
 
   const GLushort indices[] = { 0, 1 };
 
   // index
   self->index_size = sizeof (indices);
   gl->BindBuffer (GL_ELEMENT_ARRAY_BUFFER, self->vbo_indices);
-  gl->BufferData (GL_ELEMENT_ARRAY_BUFFER, self->index_size, indices,
-      GL_STATIC_DRAW);
+  gl->BufferData (GL_ELEMENT_ARRAY_BUFFER, self->index_size, indices, GL_STATIC_DRAW);
 
 }
 
 
 void
 gst_3d_mesh_upload_point_plane (Gst3DMesh * self, unsigned width,
-    unsigned height)
+                                unsigned height)
 {
   GLfloat *vertices;
   // GLfloat *texcoords;
@@ -464,12 +455,12 @@ gst_3d_mesh_upload_point_plane (Gst3DMesh * self, unsigned width,
   float h_step = 2.0 / (float) height;
 
   float curent_w = -1.0;
-/*
-  float u_step = 1.0 / (float) width;
-  float v_step = 1.0 / (float) height;
+  /*
+    float u_step = 1.0 / (float) width;
+    float v_step = 1.0 / (float) height;
 
-  float curent_u = 0.0;
-*/
+    float curent_u = 0.0;
+  */
 
   for (int i = 0; i < width; i++) {
     float curent_h = -1.0;
@@ -491,8 +482,7 @@ gst_3d_mesh_upload_point_plane (Gst3DMesh * self, unsigned width,
     curent_w += w_step;
   }
 
-  gst_3d_mesh_append_attribute_buffer (self, "position", sizeof (GLfloat), 3,
-      vertices);
+  gst_3d_mesh_append_attribute_buffer (self, "position", sizeof (GLfloat), 3, vertices);
 
   // linear index. TODO: do not use index at all here.
   self->index_size = self->vertex_count;
@@ -504,14 +494,12 @@ gst_3d_mesh_upload_point_plane (Gst3DMesh * self, unsigned width,
 
   // upload index
   gl->BindBuffer (GL_ELEMENT_ARRAY_BUFFER, self->vbo_indices);
-  gl->BufferData (GL_ELEMENT_ARRAY_BUFFER, sizeof (GLuint) * self->index_size,
-      indices, GL_STATIC_DRAW);
+  gl->BufferData (GL_ELEMENT_ARRAY_BUFFER, sizeof (GLuint) * self->index_size, indices, GL_STATIC_DRAW);
   self->draw_mode = GL_POINTS;
 }
 
 void
-gst_3d_mesh_upload_sphere (Gst3DMesh * self, float radius, unsigned stacks,
-    unsigned slices)
+gst_3d_mesh_upload_sphere (Gst3DMesh * self, float radius, unsigned stacks, unsigned slices)
 {
   GLfloat *positions;
   GLfloat *uvs;
@@ -555,7 +543,7 @@ gst_3d_mesh_upload_sphere (Gst3DMesh * self, float radius, unsigned stacks,
 
   /* index */
   self->index_size = (slices - 1) * stacks * 2;
-
+  // g_print ("gst_3d_mesh_upload_sphere index_size:%d.\n", self->index_size);
   indices = (GLushort *) malloc (sizeof (GLushort) * self->index_size);
   GLushort *indextemp = indices;
 
@@ -576,8 +564,7 @@ gst_3d_mesh_upload_sphere (Gst3DMesh * self, float radius, unsigned stacks,
 
   // upload index
   gl->BindBuffer (GL_ELEMENT_ARRAY_BUFFER, self->vbo_indices);
-  gl->BufferData (GL_ELEMENT_ARRAY_BUFFER, sizeof (GLushort) * self->index_size,
-      indices, GL_STATIC_DRAW);
+  gl->BufferData (GL_ELEMENT_ARRAY_BUFFER, sizeof (GLushort) * self->index_size, indices, GL_STATIC_DRAW);
 
   self->draw_mode = GL_TRIANGLE_STRIP;
 }
@@ -595,15 +582,13 @@ gst_3d_mesh_upload_assimp (Gst3DMesh * self, const char *file)
   scene = aiImportFile (file, 0);
 
 
-  const struct aiMesh *assimp_mesh =
-      scene->mMeshes[scene->mRootNode->mChildren[0]->mMeshes[0]];
+  const struct aiMesh *assimp_mesh = scene->mMeshes[scene->mRootNode->mChildren[0]->mMeshes[0]];
 
   GST_ERROR ("Uploading %s with %d verts", file, assimp_mesh->mNumVertices);
 
   // GLfloat *normals = malloc(3 * mesh->mNumVertices *sizeof(float));
 
-  GLfloat *positions =
-      malloc (3 * assimp_mesh->mNumVertices * sizeof (GLfloat));
+  GLfloat *positions = malloc (3 * assimp_mesh->mNumVertices * sizeof (GLfloat));
   for (int i = 0; i < assimp_mesh->mNumVertices; ++i) {
     positions[i * 3] = assimp_mesh->mVertices[i].x;
     positions[i * 3 + 1] = assimp_mesh->mVertices[i].y;
@@ -628,13 +613,11 @@ gst_3d_mesh_upload_assimp (Gst3DMesh * self, const char *file)
   self->draw_mode = GL_TRIANGLES;
   //mesh->draw_mode = GL_LINE_STRIP;
 
-  gst_3d_mesh_append_attribute_buffer (self, "position", sizeof (GLfloat), 3,
-      positions);
+  gst_3d_mesh_append_attribute_buffer (self, "position", sizeof (GLfloat), 3, positions);
   gst_3d_mesh_append_attribute_buffer (self, "uv", sizeof (GLfloat), 2, uvs);
 
   // index
   self->index_size = 3 * assimp_mesh->mNumFaces * sizeof (GLushort);
   gl->BindBuffer (GL_ELEMENT_ARRAY_BUFFER, self->vbo_indices);
-  gl->BufferData (GL_ELEMENT_ARRAY_BUFFER, self->index_size, indices,
-      GL_STATIC_DRAW);
+  gl->BufferData (GL_ELEMENT_ARRAY_BUFFER, self->index_size, indices, GL_STATIC_DRAW);
 }

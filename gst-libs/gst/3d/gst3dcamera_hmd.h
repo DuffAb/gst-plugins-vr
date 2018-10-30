@@ -27,7 +27,6 @@
 #include <graphene.h>
 #include "gst3dhmd.h"
 #include "gst3dcamera.h"
-#include "gst3dhmd.h"
 
 typedef enum Gst3DHmdQueryType
 {

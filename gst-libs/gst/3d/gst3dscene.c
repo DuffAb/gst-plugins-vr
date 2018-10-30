@@ -42,7 +42,7 @@ bool use_shader_proj = FALSE;
 GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);
 
 G_DEFINE_TYPE_WITH_CODE (Gst3DScene, gst_3d_scene, GST_TYPE_OBJECT,
-    GST_DEBUG_CATEGORY_INIT (gst_3d_scene_debug, "3dscene", 0, "scene"));
+                         GST_DEBUG_CATEGORY_INIT (gst_3d_scene_debug, "3dscene", 0, "scene"));
 
 void
 gst_3d_scene_init (Gst3DScene * self)

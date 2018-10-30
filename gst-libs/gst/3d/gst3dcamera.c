@@ -36,7 +36,7 @@
 GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);
 
 G_DEFINE_TYPE_WITH_CODE (Gst3DCamera, gst_3d_camera, GST_TYPE_OBJECT,
-    GST_DEBUG_CATEGORY_INIT (gst_3d_camera_debug, "3dcamera", 0, "camera"));
+                         GST_DEBUG_CATEGORY_INIT (gst_3d_camera_debug, "3dcamera", 0, "camera"));
 
 
 void
@@ -94,11 +94,11 @@ gst_3d_camera_update_view_mvp (Gst3DCamera * self)
 {
   graphene_matrix_t projection_matrix;
   graphene_matrix_init_perspective (&projection_matrix,
-      self->fov, self->aspect, self->znear, self->zfar);
+                                    self->fov, self->aspect, self->znear, self->zfar);
 
   graphene_matrix_t view_matrix;
   graphene_matrix_init_look_at (&view_matrix, &self->eye, &self->center,
-      &self->up);
+                                &self->up);
 
   graphene_matrix_multiply (&view_matrix, &projection_matrix, &self->mvp);
 }

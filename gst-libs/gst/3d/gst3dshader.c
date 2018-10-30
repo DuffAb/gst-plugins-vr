@@ -56,8 +56,7 @@ gst_3d_shader_new (GstGLContext * context)
 }
 
 Gst3DShader *
-gst_3d_shader_new_vert_frag (GstGLContext * context, const gchar * vertex,
-    const gchar * fragment, GError **error)
+gst_3d_shader_new_vert_frag (GstGLContext * context, const gchar * vertex, const gchar * fragment, GError **error)
 {
   g_return_val_if_fail (GST_IS_GL_CONTEXT (context), NULL);
   Gst3DShader *shader = gst_3d_shader_new (context);
@@ -131,8 +130,7 @@ gst_3d_shader_delete (Gst3DShader * self)
 }
 
 gboolean
-gst_3d_shader_from_vert_frag (Gst3DShader * self, const gchar * vertex,
-    const gchar * fragment, GError **error)
+gst_3d_shader_from_vert_frag (Gst3DShader * self, const gchar * vertex, const gchar * fragment, GError **error)
 {
   gboolean ret = FALSE;
   GstGLShader *shader = NULL;
@@ -188,18 +186,15 @@ print_error:
 }
 
 void
-gst_3d_shader_upload_matrix (Gst3DShader * self, graphene_matrix_t * mat,
-    const gchar * name)
+gst_3d_shader_upload_matrix (Gst3DShader * self, graphene_matrix_t * mat, const gchar * name)
 {
   GLfloat temp_matrix[16];
   graphene_matrix_to_float (mat, temp_matrix);
-  gst_gl_shader_set_uniform_matrix_4fv (self->shader, name, 1, GL_FALSE,
-      temp_matrix);
+  gst_gl_shader_set_uniform_matrix_4fv (self->shader, name, 1, GL_FALSE, temp_matrix);
 }
 
 void
-gst_3d_shader_upload_vec2 (Gst3DShader * self, graphene_vec2_t * vec,
-    const gchar * name)
+gst_3d_shader_upload_vec2 (Gst3DShader * self, graphene_vec2_t * vec, const gchar * name)
 {
   GLfloat temp_vec[2];
   graphene_vec2_to_float (vec, temp_vec);

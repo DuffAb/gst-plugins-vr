@@ -54,8 +54,7 @@ gst_3d_node_new (GstGLContext * context)
 }
 
 Gst3DNode *
-gst_3d_node_new_from_mesh_shader (GstGLContext * context, Gst3DMesh * mesh,
-    Gst3DShader * shader)
+gst_3d_node_new_from_mesh_shader (GstGLContext * context, Gst3DMesh * mesh, Gst3DShader * shader)
 {
   Gst3DNode *node = gst_3d_node_new (context);
   node->meshes = g_list_append (node->meshes, mesh);
@@ -89,6 +88,7 @@ gst_3d_node_class_init (Gst3DNodeClass * klass)
 Gst3DNode *
 gst_3d_node_new_debug_axes (GstGLContext * context)
 {
+  // g_print ("gst_3d_node_new_debug_axes.\n");
   GError *error = NULL;
   Gst3DNode *node;
 
@@ -96,8 +96,7 @@ gst_3d_node_new_debug_axes (GstGLContext * context)
   node = g_object_new (GST_3D_TYPE_NODE, NULL);
   node->context = gst_object_ref (context);
 
-  node->shader =
-      gst_3d_shader_new_vert_frag (context, "mvp_color.vert", "color.frag", &error);
+  node->shader = gst_3d_shader_new_vert_frag (context, "mvp_color.vert", "color.frag", &error);
   if (node->shader == NULL) {
     GST_WARNING ("Failed to create shaders. Error: %s", error->message);
     g_clear_error (&error);
@@ -135,6 +134,7 @@ gst_3d_node_new_debug_axes (GstGLContext * context)
 void
 gst_3d_node_draw (Gst3DNode * self)
 {
+  // g_print ("gst_3d_node_draw.\n");
   GList *l;
   for (l = self->meshes; l != NULL; l = l->next) {
     Gst3DMesh *mesh = (Gst3DMesh *) l->data;
@@ -146,6 +146,7 @@ gst_3d_node_draw (Gst3DNode * self)
 void
 gst_3d_node_draw_wireframe (Gst3DNode * self)
 {
+  // g_print ("gst_3d_node_draw_wireframe.\n");
   GList *l;
   for (l = self->meshes; l != NULL; l = l->next) {
     Gst3DMesh *mesh = (Gst3DMesh *) l->data;

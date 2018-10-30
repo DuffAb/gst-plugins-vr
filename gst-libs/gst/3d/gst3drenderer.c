@@ -34,21 +34,19 @@
 #include "gst3dcamera_hmd.h"
 #include "gst3dscene.h"
 
-
 #define GST_CAT_DEFAULT gst_3d_renderer_debug
 GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);
 
 G_DEFINE_TYPE_WITH_CODE (Gst3DRenderer, gst_3d_renderer, GST_TYPE_OBJECT,
-    GST_DEBUG_CATEGORY_INIT (gst_3d_renderer_debug, "3drenderer", 0,
-        "renderer"));
+                         GST_DEBUG_CATEGORY_INIT (gst_3d_renderer_debug, "3drenderer", 0, "renderer"));
 
 void
 _insert_gl_debug_marker (GstGLContext * context, const gchar * message)
 {
   GstGLFuncs *gl = context->gl_vtable;
   gl->DebugMessageInsert (GL_DEBUG_SOURCE_APPLICATION,
-      GL_DEBUG_TYPE_OTHER,
-      1, GL_DEBUG_SEVERITY_HIGH, strlen (message), message);
+                          GL_DEBUG_TYPE_OTHER,
+                          1, GL_DEBUG_SEVERITY_HIGH, strlen (message), message);
 }
 
 void
@@ -99,23 +97,20 @@ gst_3d_renderer_class_init (Gst3DRendererClass * klass)
 }
 
 static void
-_create_fbo (GstGLFuncs * gl, GLuint * fbo, GLuint * color_tex,
-    int width, int height)
+_create_fbo (GstGLFuncs * gl, GLuint * fbo, GLuint * color_tex, int width, int height)
 {
   gl->GenTextures (1, color_tex);
   gl->GenFramebuffers (1, fbo);
 
   gl->BindTexture (GL_TEXTURE_2D, *color_tex);
-  gl->TexImage2D (GL_TEXTURE_2D, 0, GL_RGBA8, width, height,
-      0, GL_RGBA, GL_UNSIGNED_INT, NULL);
+  gl->TexImage2D (GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_INT, NULL);
   gl->TexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   gl->TexParameteri (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   gl->TexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   gl->TexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
   gl->BindFramebuffer (GL_FRAMEBUFFER_EXT, *fbo);
-  gl->FramebufferTexture2D (GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-      *color_tex, 0);
+  gl->FramebufferTexture2D (GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *color_tex, 0);
 
   GLenum status = gl->CheckFramebufferStatus (GL_FRAMEBUFFER);
 
@@ -141,8 +136,7 @@ gst_3d_renderer_stereo_init_from_hmd (Gst3DRenderer * self, Gst3DHmd * hmd)
 }
 
 gboolean
-gst_3d_renderer_stero_init_from_filter (Gst3DRenderer * self,
-    GstGLFilter * filter)
+gst_3d_renderer_stero_init_from_filter (Gst3DRenderer * self, GstGLFilter * filter)
 {
   int w = GST_VIDEO_INFO_WIDTH (&filter->out_info) / 2;
   int h = GST_VIDEO_INFO_HEIGHT (&filter->out_info);
@@ -155,8 +149,7 @@ gst_3d_renderer_stero_init_from_filter (Gst3DRenderer * self,
 }
 
 static void
-_draw_eye (Gst3DRenderer * self, GLuint fbo, Gst3DScene * scene,
-    graphene_matrix_t * mvp)
+_draw_eye (Gst3DRenderer * self, GLuint fbo, Gst3DScene * scene, graphene_matrix_t * mvp)
 {
   GstGLFuncs *gl = self->context->gl_vtable;
   _insert_gl_debug_marker (self->context, "_draw_eye");
@@ -203,7 +196,7 @@ _draw_framebuffers_on_planes_shader_proj (Gst3DRenderer * self,
 
   graphene_matrix_t projection_ortho;
   graphene_matrix_init_ortho (&projection_ortho, -self->filter_aspect,
-      self->filter_aspect, -1.0, 1.0, -1.0, 1.0);
+                              self->filter_aspect, -1.0, 1.0, -1.0, 1.0);
   gst_3d_shader_upload_matrix (self->shader, &projection_ortho, "mvp");
 
 
@@ -227,6 +220,7 @@ _draw_framebuffers_on_planes_shader_proj (Gst3DRenderer * self,
 void
 gst_3d_renderer_init_stereo (Gst3DRenderer * self, Gst3DCamera * cam)
 {
+  // g_print ("gst_3d_renderer_init_stereo.\n");
   GError *error = NULL;
 
   GstGLFuncs *gl = self->context->gl_vtable;
@@ -234,8 +228,7 @@ gst_3d_renderer_init_stereo (Gst3DRenderer * self, Gst3DCamera * cam)
   Gst3DHmd *hmd = hmd_cam->hmd;
   float aspect_ratio = hmd->left_aspect;
   self->render_plane = gst_3d_mesh_new_plane (self->context, aspect_ratio);
-  self->shader = gst_3d_shader_new_vert_frag (self->context, "mvp_uv.vert",
-      "texture_uv.frag", &error);
+  self->shader = gst_3d_shader_new_vert_frag (self->context, "mvp_uv.vert", "texture_uv.frag", &error);
 
   if (self->shader == NULL) {
     GST_WARNING ("Failed to create shaders. Error: %s", error->message);
@@ -245,10 +238,9 @@ gst_3d_renderer_init_stereo (Gst3DRenderer * self, Gst3DCamera * cam)
 
   gst_3d_mesh_bind_shader (self->render_plane, self->shader);
 
-  _create_fbo (gl, &self->left_fbo, &self->left_color_tex,
-      self->eye_width, self->eye_height);
-  _create_fbo (gl, &self->right_fbo, &self->right_color_tex,
-      self->eye_width, self->eye_height);
+  _create_fbo (gl, &self->left_fbo, &self->left_color_tex, self->eye_width, self->eye_height);
+  _create_fbo (gl, &self->right_fbo, &self->right_color_tex, self->eye_width, self->eye_height);
+  // g_print ("eye_width eye_height (%d, %d).\n", self->eye_width, self->eye_height);
 
   gst_3d_shader_bind (self->shader);
   gst_gl_shader_set_uniform_1i (self->shader->shader, "texture", 0);
@@ -256,8 +248,7 @@ gst_3d_renderer_init_stereo (Gst3DRenderer * self, Gst3DCamera * cam)
 
 
 void
-gst_3d_renderer_init_stereo_shader_proj (Gst3DRenderer * self,
-    Gst3DCamera * cam)
+gst_3d_renderer_init_stereo_shader_proj (Gst3DRenderer * self, Gst3DCamera * cam)
 {
   GError *error = NULL;
 
@@ -267,7 +258,7 @@ gst_3d_renderer_init_stereo_shader_proj (Gst3DRenderer * self,
   self->render_plane = gst_3d_mesh_new_plane (self->context, aspect_ratio);
 
   self->shader = gst_3d_shader_new_vert_frag (self->context, "mvp_uv.vert",
-      "texture_equirectangular_sphere.frag", &error);
+                 "texture_equirectangular_sphere.frag", &error);
 
   if (self->shader == NULL) {
     GST_WARNING ("Failed to create shaders. Error: %s", error->message);
@@ -284,6 +275,7 @@ gst_3d_renderer_init_stereo_shader_proj (Gst3DRenderer * self,
 void
 gst_3d_renderer_draw_stereo (Gst3DRenderer * self, Gst3DScene * scene)
 {
+  // g_print ("gst_3d_renderer_draw_stereo.\n");
   GstGLFuncs *gl = self->context->gl_vtable;
 
   _insert_gl_debug_marker (self->context, "gst_3d_renderer_draw_stereo");

@@ -61,8 +61,7 @@ void gst_3d_node_draw (Gst3DNode * self);
 void gst_3d_node_draw_wireframe (Gst3DNode * self);
 
 Gst3DNode *
-gst_3d_node_new_from_mesh_shader (GstGLContext * context, Gst3DMesh * mesh,
-    Gst3DShader * shader);
+gst_3d_node_new_from_mesh_shader (GstGLContext * context, Gst3DMesh * mesh, Gst3DShader * shader);
 
 G_END_DECLS
 #endif /* __GST_3D_NODE_H__ */

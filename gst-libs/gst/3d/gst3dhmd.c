@@ -79,25 +79,18 @@ gst_3d_hmd_open_device (Gst3DHmd * self)
 
   for (int i = 0; i < num_devices; i++) {
     GST_DEBUG ("device %d", i);
-    GST_DEBUG ("  vendor:  %s", ohmd_list_gets (self->hmd_context, i,
-            OHMD_VENDOR));
-    GST_DEBUG ("  product: %s", ohmd_list_gets (self->hmd_context, i,
-            OHMD_PRODUCT));
-    GST_DEBUG ("  path:    %s", ohmd_list_gets (self->hmd_context, i,
-            OHMD_PATH));
+    GST_DEBUG ("  vendor:  %s", ohmd_list_gets (self->hmd_context, i, OHMD_VENDOR));
+    GST_DEBUG ("  product: %s", ohmd_list_gets (self->hmd_context, i, OHMD_PRODUCT));
+    GST_DEBUG ("  path:    %s", ohmd_list_gets (self->hmd_context, i, OHMD_PATH));
   }
 
   self->device = ohmd_list_open_device (self->hmd_context, picked_device);
 
   if (!self->device) {
-    GST_ERROR ("Failed to open device: %s\n",
-        ohmd_ctx_get_error (self->hmd_context));
-    GST_ERROR ("  vendor:  %s", ohmd_list_gets (self->hmd_context,
-            picked_device, OHMD_VENDOR));
-    GST_ERROR ("  product: %s", ohmd_list_gets (self->hmd_context,
-            picked_device, OHMD_PRODUCT));
-    GST_ERROR ("  path:    %s", ohmd_list_gets (self->hmd_context,
-            picked_device, OHMD_PATH));
+    GST_ERROR ("Failed to open device: %s\n", ohmd_ctx_get_error (self->hmd_context));
+    GST_ERROR ("  vendor:  %s", ohmd_list_gets (self->hmd_context, picked_device, OHMD_VENDOR));
+    GST_ERROR ("  product: %s", ohmd_list_gets (self->hmd_context, picked_device, OHMD_PRODUCT));
+    GST_ERROR ("  path:    %s", ohmd_list_gets (self->hmd_context, picked_device, OHMD_PATH));
     GST_ERROR ("Make sure you have access rights and a working rules "
         "file for your headset in /usr/lib/udev/rules.d");
     return;
@@ -117,29 +110,22 @@ gst_3d_hmd_reset (Gst3DHmd * self)
 static void
 gst_3d_hmd_get_device_properties (Gst3DHmd * self)
 {
-  ohmd_device_geti (self->device, OHMD_SCREEN_HORIZONTAL_RESOLUTION,
-      &self->screen_width);
-  ohmd_device_geti (self->device, OHMD_SCREEN_VERTICAL_RESOLUTION,
-      &self->screen_height);
+  ohmd_device_geti (self->device, OHMD_SCREEN_HORIZONTAL_RESOLUTION, &self->screen_width);
+  ohmd_device_geti (self->device, OHMD_SCREEN_VERTICAL_RESOLUTION, &self->screen_height);
 
-  GST_DEBUG ("HMD screen resolution: %dx%d", self->screen_width,
-      self->screen_height);
+  GST_DEBUG ("HMD screen resolution: %dx%d", self->screen_width, self->screen_height);
 
   float screen_width_physical;
   float screen_height_physical;
 
-  ohmd_device_getf (self->device, OHMD_SCREEN_HORIZONTAL_SIZE,
-      &screen_width_physical);
-  ohmd_device_getf (self->device, OHMD_SCREEN_VERTICAL_SIZE,
-      &screen_height_physical);
+  ohmd_device_getf (self->device, OHMD_SCREEN_HORIZONTAL_SIZE, &screen_width_physical);
+  ohmd_device_getf (self->device, OHMD_SCREEN_VERTICAL_SIZE, &screen_height_physical);
 
   GST_DEBUG ("Physical HMD screen dimensions: %.3fx%.3fcm",
       screen_width_physical * 100.0, screen_height_physical * 100.0);
 
-  float x_pixels_per_cm =
-      (float) self->screen_width / (screen_width_physical * 100.0);
-  float y_pixels_per_cm =
-      (float) self->screen_height / (screen_height_physical * 100.0);
+  float x_pixels_per_cm = (float) self->screen_width / (screen_width_physical * 100.0);
+  float y_pixels_per_cm = (float) self->screen_height / (screen_height_physical * 100.0);
 
   const float inch = 2.54;
   GST_DEBUG ("HMD DPI %f x %f", x_pixels_per_cm / inch, y_pixels_per_cm / inch);
@@ -147,10 +133,8 @@ gst_3d_hmd_get_device_properties (Gst3DHmd * self)
   float lens_x_separation;
   float lens_y_position;
 
-  ohmd_device_getf (self->device, OHMD_LENS_HORIZONTAL_SEPARATION,
-      &lens_x_separation);
-  ohmd_device_getf (self->device, OHMD_LENS_VERTICAL_POSITION,
-      &lens_y_position);
+  ohmd_device_getf (self->device, OHMD_LENS_HORIZONTAL_SEPARATION, &lens_x_separation);
+  ohmd_device_getf (self->device, OHMD_LENS_VERTICAL_POSITION, &lens_y_position);
 
   GST_DEBUG ("Horizontal Lens Separation: %.3fcm", lens_x_separation * 100.0);
   GST_DEBUG ("Vertical Lens Position: %.3fcm", lens_y_position * 100.0);
@@ -159,16 +143,13 @@ gst_3d_hmd_get_device_properties (Gst3DHmd * self)
   ohmd_device_getf (self->device, OHMD_RIGHT_EYE_FOV, &self->right_fov);
   GST_DEBUG ("FOV (left/right): %f %f", self->left_fov, self->right_fov);
 
-  ohmd_device_getf (self->device, OHMD_LEFT_EYE_ASPECT_RATIO,
-      &self->left_aspect);
-  ohmd_device_getf (self->device, OHMD_RIGHT_EYE_ASPECT_RATIO,
-      &self->right_aspect);
-  GST_DEBUG ("Aspect Ratio (left/right): %f %f", self->left_aspect,
-      self->right_aspect);
+  ohmd_device_getf (self->device, OHMD_LEFT_EYE_ASPECT_RATIO, &self->left_aspect);
+  ohmd_device_getf (self->device, OHMD_RIGHT_EYE_ASPECT_RATIO, &self->right_aspect);
+  // g_print ("gst_3d_hmd_get_device_properties (left_aspect right_aspect) (%f, %f).\n", self->left_aspect, self->right_aspect);
+  GST_DEBUG ("Aspect Ratio (left/right): %f %f", self->left_aspect, self->right_aspect);
 
   ohmd_device_getf (self->device, OHMD_EYE_IPD, &self->interpupillary_distance);
-  GST_DEBUG ("interpupillary_distance %.3fcm",
-      self->interpupillary_distance * 100.0);
+  GST_DEBUG ("interpupillary_distance %.3fcm", self->interpupillary_distance * 100.0);
 
   //self->eye_separation = interpupillary_distance * 100.0 / 2.0;
   //self->eye_separation = 0.65;
@@ -203,7 +184,7 @@ gst_3d_hmd_get_matrix (Gst3DHmd * self, ohmd_float_value type)
   float matrix[16];
   graphene_matrix_t hmd_matrix;
 
-  ohmd_device_getf (self->device, type, matrix);
+  ohmd_device_getf (self->device, type, matrix);// 从设备获取浮点值
   graphene_matrix_init_from_float (&hmd_matrix, matrix);
   return hmd_matrix;
 }
@@ -265,6 +246,5 @@ gst_3d_hmd_get_screen_aspect (Gst3DHmd * self)
 float
 gst_3d_hmd_get_eye_aspect (Gst3DHmd * self)
 {
-  return (gdouble) gst_3d_hmd_get_eye_width (self)
-      / (gdouble) gst_3d_hmd_get_eye_height (self);
+  return (gdouble) gst_3d_hmd_get_eye_width (self) / (gdouble) gst_3d_hmd_get_eye_height (self);
 }

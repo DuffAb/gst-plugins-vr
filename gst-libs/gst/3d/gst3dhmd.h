@@ -52,7 +52,7 @@ struct _Gst3DHmd
   float right_fov;
   float right_aspect;
   
-  float interpupillary_distance;
+  float interpupillary_distance;//Í«¿×¼äµÄ¾àÀë
   float zfar;
   float znear;
   

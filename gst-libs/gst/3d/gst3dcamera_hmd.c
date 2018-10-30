@@ -33,18 +33,15 @@
 #include "gst3dcamera_hmd.h"
 #include "gst3dmath.h"
 #include "gst3drenderer.h"
-#include "gst3dmath.h"
 
 
 #define GST_CAT_DEFAULT gst_3d_camera_hmd_debug
 GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);
 
 G_DEFINE_TYPE_WITH_CODE (Gst3DCameraHmd, gst_3d_camera_hmd,
-    GST_3D_TYPE_CAMERA, GST_DEBUG_CATEGORY_INIT (gst_3d_camera_hmd_debug,
-        "3dcamera_hmd", 0, "camera_hmd"));
+    GST_3D_TYPE_CAMERA, GST_DEBUG_CATEGORY_INIT (gst_3d_camera_hmd_debug, "3dcamera_hmd", 0, "camera_hmd"));
 
-static void gst_3d_camera_hmd_navigation_event (Gst3DCamera * self,
-    GstEvent * event);
+static void gst_3d_camera_hmd_navigation_event (Gst3DCamera * self, GstEvent * event);
 static void gst_3d_camera_hmd_update_view (Gst3DCamera * self);
 
 void
@@ -94,37 +91,33 @@ gst_3d_camera_hmd_update_view (Gst3DCamera * cam)
 void
 gst_3d_camera_hmd_update_view_from_quaternion (Gst3DCameraHmd * self)
 {
+  // g_print ("gst_3d_camera_hmd_update_view_from_quaternion.\n");
   /* projection from OpenHMD */
   graphene_matrix_t left_eye_model_view;
-  graphene_matrix_t left_eye_projection =
-      gst_3d_hmd_get_matrix (self->hmd, OHMD_LEFT_EYE_GL_PROJECTION_MATRIX);
+  graphene_matrix_t left_eye_projection = gst_3d_hmd_get_matrix (self->hmd, OHMD_LEFT_EYE_GL_PROJECTION_MATRIX);
 
   graphene_matrix_t right_eye_model_view;
-  graphene_matrix_t right_eye_projection =
-      gst_3d_hmd_get_matrix (self->hmd, OHMD_RIGHT_EYE_GL_PROJECTION_MATRIX);
+  graphene_matrix_t right_eye_projection = gst_3d_hmd_get_matrix (self->hmd, OHMD_RIGHT_EYE_GL_PROJECTION_MATRIX);
 
   /* rotation from OpenHMD */
   graphene_quaternion_t quat = gst_3d_hmd_get_quaternion (self->hmd);
   graphene_quaternion_to_matrix (&quat, &right_eye_model_view);
   graphene_quaternion_to_matrix (&quat, &left_eye_model_view);
 
-  graphene_matrix_multiply (&left_eye_model_view, &left_eye_projection,
-      &self->left_vp_matrix);
-  graphene_matrix_multiply (&right_eye_model_view, &right_eye_projection,
-      &self->right_vp_matrix);
+  graphene_matrix_multiply (&left_eye_model_view, &left_eye_projection, &self->left_vp_matrix);
+  graphene_matrix_multiply (&right_eye_model_view, &right_eye_projection, &self->right_vp_matrix);
 }
 
 void
 gst_3d_camera_hmd_update_view_from_quaternion_stereo (Gst3DCameraHmd * self)
 {
+  // g_print ("gst_3d_camera_hmd_update_view_from_quaternion_stereo.\n");
   /* projection from OpenHMD */
   graphene_matrix_t left_eye_model_view;
-  graphene_matrix_t left_eye_projection =
-      gst_3d_hmd_get_matrix (self->hmd, OHMD_LEFT_EYE_GL_PROJECTION_MATRIX);
+  graphene_matrix_t left_eye_projection = gst_3d_hmd_get_matrix (self->hmd, OHMD_LEFT_EYE_GL_PROJECTION_MATRIX);
 
   graphene_matrix_t right_eye_model_view;
-  graphene_matrix_t right_eye_projection =
-      gst_3d_hmd_get_matrix (self->hmd, OHMD_RIGHT_EYE_GL_PROJECTION_MATRIX);
+  graphene_matrix_t right_eye_projection = gst_3d_hmd_get_matrix (self->hmd, OHMD_RIGHT_EYE_GL_PROJECTION_MATRIX);
 
   /* rotation from OpenHMD */
   graphene_quaternion_t quat = gst_3d_hmd_get_quaternion (self->hmd);
@@ -141,26 +134,21 @@ gst_3d_camera_hmd_update_view_from_quaternion_stereo (Gst3DCameraHmd * self)
   graphene_matrix_t translate_right;
   graphene_matrix_init_translate (&translate_right, &rigth_eye);
 
-  graphene_matrix_multiply (&right_eye_model_view, &translate_right,
-      &right_eye_model_view);
-  graphene_matrix_multiply (&left_eye_model_view, &translate_left,
-      &left_eye_model_view);
+  graphene_matrix_multiply (&right_eye_model_view, &translate_right, &right_eye_model_view);
+  graphene_matrix_multiply (&left_eye_model_view, &translate_left, &left_eye_model_view);
 
-  graphene_matrix_multiply (&left_eye_model_view, &left_eye_projection,
-      &self->left_vp_matrix);
-  graphene_matrix_multiply (&right_eye_model_view, &right_eye_projection,
-      &self->right_vp_matrix);
+  graphene_matrix_multiply (&left_eye_model_view, &left_eye_projection, &self->left_vp_matrix);
+  graphene_matrix_multiply (&right_eye_model_view, &right_eye_projection, &self->right_vp_matrix);
 }
 
 void
-_matrix_invert_y_rotation (const graphene_matrix_t * source,
-    graphene_matrix_t * result)
+_matrix_invert_y_rotation (const graphene_matrix_t * source, graphene_matrix_t * result)
 {
   gfloat invert_values[] = {
-    1, -1, 1, 1,
-    -1, 1, -1, 1,
-    1, -1, 1, 1,
-    1, 1, 1, 1
+     1, -1,  1, 1,
+    -1,  1, -1, 1,
+     1, -1,  1, 1,
+     1,  1,  1, 1
   };
   graphene_matrix_t invert_matrix;
   graphene_matrix_init_from_float (&invert_matrix, invert_values);
@@ -170,15 +158,16 @@ _matrix_invert_y_rotation (const graphene_matrix_t * source,
 void
 gst_3d_camera_hmd_update_view_from_matrix (Gst3DCameraHmd * self)
 {
-  graphene_matrix_t left_eye_model_view =
-      gst_3d_hmd_get_matrix (self->hmd, OHMD_LEFT_EYE_GL_MODELVIEW_MATRIX);
-  graphene_matrix_t left_eye_projection =
-      gst_3d_hmd_get_matrix (self->hmd, OHMD_LEFT_EYE_GL_PROJECTION_MATRIX);
+  // g_print ("gst_3d_camera_hmd_update_view_from_matrix.\n");
+  graphene_matrix_t left_eye_model_view = gst_3d_hmd_get_matrix (self->hmd, // 设备句柄, 用于获取数据
+    OHMD_LEFT_EYE_GL_MODELVIEW_MATRIX);// 一个“随时可用”的OpenGL样式4x4矩阵，带有用于HMD左眼的模型视图矩阵
+  graphene_matrix_t left_eye_projection = gst_3d_hmd_get_matrix (self->hmd, // 设备句柄, 用于获取数据
+    OHMD_LEFT_EYE_GL_PROJECTION_MATRIX);// 一个“随时可用”的OpenGL样式4x4矩阵，带有用于HMD左眼的投影矩阵。
 
-  graphene_matrix_t right_eye_model_view =
-      gst_3d_hmd_get_matrix (self->hmd, OHMD_RIGHT_EYE_GL_MODELVIEW_MATRIX);
-  graphene_matrix_t right_eye_projection =
-      gst_3d_hmd_get_matrix (self->hmd, OHMD_RIGHT_EYE_GL_PROJECTION_MATRIX);
+  graphene_matrix_t right_eye_model_view = gst_3d_hmd_get_matrix (self->hmd, // 设备句柄, 用于获取数据
+    OHMD_RIGHT_EYE_GL_MODELVIEW_MATRIX);// 一个“随时可用”的OpenGL样式4x4矩阵，带有用于HMD右眼的模型视图矩阵
+  graphene_matrix_t right_eye_projection = gst_3d_hmd_get_matrix (self->hmd, // 设备句柄, 用于获取数据
+    OHMD_RIGHT_EYE_GL_PROJECTION_MATRIX);// 一个“随时可用”的OpenGL样式4x4矩阵，带有用于HMD右眼的投影矩阵。
 
   graphene_matrix_t left_eye_model_view_inv;
   graphene_matrix_t right_eye_model_view_inv;
@@ -186,10 +175,9 @@ gst_3d_camera_hmd_update_view_from_matrix (Gst3DCameraHmd * self)
   _matrix_invert_y_rotation (&left_eye_model_view, &left_eye_model_view_inv);
   _matrix_invert_y_rotation (&right_eye_model_view, &right_eye_model_view_inv);
 
-  graphene_matrix_multiply (&right_eye_model_view_inv, &left_eye_projection,
-      &self->left_vp_matrix);
-  graphene_matrix_multiply (&left_eye_model_view_inv, &right_eye_projection,
-      &self->right_vp_matrix);
+  graphene_matrix_multiply (&right_eye_model_view_inv, &left_eye_projection, &self->left_vp_matrix);
+  graphene_matrix_multiply (&left_eye_model_view_inv, &right_eye_projection, &self->right_vp_matrix);
+  // graphene_matrix_init_identity();
 
 }
 
@@ -211,8 +199,7 @@ _iterate_query_type (Gst3DCameraHmd * self)
       self->update_view_funct = &gst_3d_camera_hmd_update_view_from_quaternion;
       break;
     case HMD_QUERY_TYPE_QUATERNION_STEREO:
-      self->update_view_funct =
-          &gst_3d_camera_hmd_update_view_from_quaternion_stereo;
+      self->update_view_funct = &gst_3d_camera_hmd_update_view_from_quaternion_stereo;
       break;
   }
 }
@@ -224,8 +211,7 @@ gst_3d_camera_hmd_navigation_event (Gst3DCamera * cam, GstEvent * event)
   switch (event_type) {
     case GST_NAVIGATION_EVENT_KEY_PRESS:{
       Gst3DCameraHmd *self = GST_3D_CAMERA_HMD (cam);
-      GstStructure *structure =
-          (GstStructure *) gst_event_get_structure (event);
+      GstStructure *structure = (GstStructure *) gst_event_get_structure (event);
       const gchar *key = gst_structure_get_string (structure, "key");
       if (key != NULL) {
         if (g_strcmp0 (key, "KP_Add") == 0)
