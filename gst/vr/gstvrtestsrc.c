@@ -79,33 +79,24 @@ static GstStaticPadTemplate src_factory = GST_STATIC_PAD_TEMPLATE ("src",
 #define gst_vr_test_src_parent_class parent_class
 G_DEFINE_TYPE (GstVRTestSrc, gst_vr_test_src, GST_TYPE_PUSH_SRC);
 
-static void gst_vr_test_src_set_scene (GstVRTestSrc * gstvrtestsrc,
-    int scene_type);
-static void gst_vr_test_src_set_property (GObject * object, guint prop_id,
-    const GValue * value, GParamSpec * pspec);
-static void gst_vr_test_src_get_property (GObject * object, guint prop_id,
-    GValue * value, GParamSpec * pspec);
+static void gst_vr_test_src_set_scene (GstVRTestSrc * gstvrtestsrc, int scene_type);
+static void gst_vr_test_src_set_property (GObject * object, guint prop_id, const GValue * value, GParamSpec * pspec);
+static void gst_vr_test_src_get_property (GObject * object, guint prop_id, GValue * value, GParamSpec * pspec);
 
 static gboolean gst_vr_test_src_setcaps (GstBaseSrc * bsrc, GstCaps * caps);
 static GstCaps *gst_vr_test_src_fixate (GstBaseSrc * bsrc, GstCaps * caps);
 
 static gboolean gst_vr_test_src_is_seekable (GstBaseSrc * psrc);
-static gboolean gst_vr_test_src_do_seek (GstBaseSrc * bsrc,
-    GstSegment * segment);
+static gboolean gst_vr_test_src_do_seek (GstBaseSrc * bsrc, GstSegment * segment);
 static gboolean gst_vr_test_src_query (GstBaseSrc * bsrc, GstQuery * query);
-static void gst_vr_test_src_set_context (GstElement * element,
-    GstContext * context);
-static GstStateChangeReturn gst_vr_test_src_change_state (GstElement * element,
-    GstStateChange transition);
+static void gst_vr_test_src_set_context (GstElement * element, GstContext * context);
+static GstStateChangeReturn gst_vr_test_src_change_state (GstElement * element, GstStateChange transition);
 
-static void gst_vr_test_src_get_times (GstBaseSrc * basesrc,
-    GstBuffer * buffer, GstClockTime * start, GstClockTime * end);
-static GstFlowReturn gst_vr_test_src_fill (GstPushSrc * psrc,
-    GstBuffer * buffer);
+static void gst_vr_test_src_get_times (GstBaseSrc * basesrc, GstBuffer * buffer, GstClockTime * start, GstClockTime * end);
+static GstFlowReturn gst_vr_test_src_fill (GstPushSrc * psrc, GstBuffer * buffer);
 static gboolean gst_vr_test_src_start (GstBaseSrc * basesrc);
 static gboolean gst_vr_test_src_stop (GstBaseSrc * basesrc);
-static gboolean gst_vr_test_src_decide_allocation (GstBaseSrc * basesrc,
-    GstQuery * query);
+static gboolean gst_vr_test_src_decide_allocation (GstBaseSrc * basesrc, GstQuery * query);
 
 static gboolean gst_vr_test_src_draw (gpointer stuff);
 
@@ -139,8 +130,7 @@ gst_vr_test_src_class_init (GstVRTestSrcClass * klass)
   GstPushSrcClass *gstpushsrc_class;
   GstElementClass *element_class;
 
-  GST_DEBUG_CATEGORY_INIT (vr_test_src_debug, "gstvrtestsrc", 0,
-      "VR Test Source");
+  GST_DEBUG_CATEGORY_INIT (vr_test_src_debug, "gstvrtestsrc", 0, "VR Test Source");
 
   gobject_class = (GObjectClass *) klass;
   gstbasesrc_class = (GstBaseSrcClass *) klass;

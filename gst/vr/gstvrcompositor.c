@@ -64,26 +64,20 @@ enum
 #define DEBUG_INIT \
     GST_DEBUG_CATEGORY_INIT (gst_vr_compositor_debug, "vrcompositor", 0, "vrcompositor element");
 
-G_DEFINE_TYPE_WITH_CODE (GstVRCompositor, gst_vr_compositor,
-    GST_TYPE_GL_FILTER, DEBUG_INIT);
+G_DEFINE_TYPE_WITH_CODE (GstVRCompositor, gst_vr_compositor, GST_TYPE_GL_FILTER, DEBUG_INIT);
 
-static void gst_vr_compositor_set_property (GObject * object, guint prop_id,
-    const GValue * value, GParamSpec * pspec);
-static void gst_vr_compositor_get_property (GObject * object, guint prop_id,
-    GValue * value, GParamSpec * pspec);
+static void gst_vr_compositor_set_property (GObject * object, guint prop_id, const GValue * value, GParamSpec * pspec);
+static void gst_vr_compositor_get_property (GObject * object, guint prop_id, GValue * value, GParamSpec * pspec);
 
-static gboolean gst_vr_compositor_set_caps (GstGLFilter * filter,
-    GstCaps * incaps, GstCaps * outcaps);
-static gboolean gst_vr_compositor_src_event (GstBaseTransform * trans,
-    GstEvent * event);
+static gboolean gst_vr_compositor_set_caps (GstGLFilter * filter, GstCaps * incaps, GstCaps * outcaps);
+static gboolean gst_vr_compositor_src_event (GstBaseTransform * trans, GstEvent * event);
 
 // static void gst_vr_compositor_reset_gl (GstGLFilter * filter);
 static gboolean gst_vr_compositor_stop (GstBaseTransform * trans);
 static gboolean gst_vr_compositor_init_scene (GstGLFilter * filter);
 static gboolean gst_vr_compositor_draw (gpointer stuff);
 
-static gboolean gst_vr_compositor_filter_texture (GstGLFilter * filter,
-    GstGLMemory * in_tex, GstGLMemory * out_tex);
+static gboolean gst_vr_compositor_filter_texture (GstGLFilter * filter, GstGLMemory * in_tex, GstGLMemory * out_tex);
 
 static void _init_scene (Gst3DScene * scene);
 
@@ -98,8 +92,8 @@ gst_vr_compositor_class_init (GstVRCompositorClass * klass)
   element_class = GST_ELEMENT_CLASS (klass);
   base_transform_class = GST_BASE_TRANSFORM_CLASS (klass);
 
-  gobject_class->set_property = gst_vr_compositor_set_property;
-  gobject_class->get_property = gst_vr_compositor_get_property;
+  gobject_class->set_property = gst_vr_compositor_set_property;//element 属性设置函数
+  gobject_class->get_property = gst_vr_compositor_get_property;//element 属性获取函数
 
   base_transform_class->src_event = gst_vr_compositor_src_event;
 
@@ -108,13 +102,15 @@ gst_vr_compositor_class_init (GstVRCompositorClass * klass)
   GST_GL_FILTER_CLASS (klass)->init_fbo = gst_vr_compositor_init_scene;
   // GST_GL_FILTER_CLASS (klass)->display_reset_cb = gst_vr_compositor_reset_gl;
   GST_GL_FILTER_CLASS (klass)->set_caps = gst_vr_compositor_set_caps;
-  GST_GL_FILTER_CLASS (klass)->filter_texture =
-      gst_vr_compositor_filter_texture;
+  GST_GL_FILTER_CLASS (klass)->filter_texture = gst_vr_compositor_filter_texture;
   GST_BASE_TRANSFORM_CLASS (klass)->stop = gst_vr_compositor_stop;
 
-  gst_element_class_set_metadata (element_class, "VR compositor",
-      "Filter/Effect/Video", "Transform video for VR",
-      "Lubosz Sarnecki <lubosz.sarnecki@collabora.co.uk>\n");
+  // 此函数仅用于_class_init函数,设置GstElementClass的详细信息。
+  gst_element_class_set_metadata (element_class, //GstElementClass *klass: 用于设置元数据的类
+                                  "VR compositor",          //const gchar *longname: element的长英文名称。 E.g. "File Sink"
+                                  "Filter/Effect/Video",    //const gchar *classification:描述元素类型的字符串，作为用斜杠（'/'）分隔的无序列表例如："Sink / File"
+                                  "Transform video for VR", //const gchar *description:句子描述元素的目的。 例如："Write stream to a file"
+                                  "Lubosz Sarnecki <lubosz.sarnecki@collabora.co.uk>\n");//const gchar *author：作者的姓名和联系方式
 
   GST_GL_BASE_FILTER_CLASS (klass)->supported_gl_api = GST_GL_API_OPENGL3;
 }
@@ -127,31 +123,29 @@ gst_vr_compositor_init (GstVRCompositor * self)
 }
 
 static void
-gst_vr_compositor_set_property (GObject * object, guint prop_id,
-    const GValue * value, GParamSpec * pspec)
+gst_vr_compositor_set_property (GObject * object, guint prop_id, const GValue * value, GParamSpec * pspec)
 {
   switch (prop_id) {
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-      break;
+  default:
+    G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+    break;
   }
 }
 
 
 static void
 gst_vr_compositor_get_property (GObject * object, guint prop_id,
-    GValue * value, GParamSpec * pspec)
+                                GValue * value, GParamSpec * pspec)
 {
   switch (prop_id) {
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-      break;
+  default:
+    G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+    break;
   }
 }
 
 static gboolean
-gst_vr_compositor_set_caps (GstGLFilter * filter, GstCaps * incaps,
-    GstCaps * outcaps)
+gst_vr_compositor_set_caps (GstGLFilter * filter, GstCaps * incaps, GstCaps * outcaps)
 {
   GstVRCompositor *self = GST_VR_COMPOSITOR (filter);
   gboolean ret = TRUE;
@@ -175,19 +169,20 @@ gst_vr_compositor_set_caps (GstGLFilter * filter, GstCaps * incaps,
 static gboolean
 gst_vr_compositor_src_event (GstBaseTransform * trans, GstEvent * event)
 {
+  // g_print ("gst_vr_compositor_src_event.\n");
   GstVRCompositor *self = GST_VR_COMPOSITOR (trans);
   GST_DEBUG_OBJECT (trans, "handling %s event", GST_EVENT_TYPE_NAME (event));
-
+  // RUN_TIME_BEGIN();
   switch (GST_EVENT_TYPE (event)) {
-    case GST_EVENT_NAVIGATION:
-      event =
-          GST_EVENT (gst_mini_object_make_writable (GST_MINI_OBJECT (event)));
-      gst_3d_scene_send_eos_on_esc (GST_ELEMENT (self), event);
-      gst_3d_scene_navigation_event (self->scene, event);
-      break;
-    default:
-      break;
+  case GST_EVENT_NAVIGATION:
+    event = GST_EVENT (gst_mini_object_make_writable (GST_MINI_OBJECT (event)));
+    gst_3d_scene_send_eos_on_esc (GST_ELEMENT (self), event);
+    gst_3d_scene_navigation_event (self->scene, event);
+    break;
+  default:
+    break;
   }
+  // RUN_TIME_END();
   return GST_BASE_TRANSFORM_CLASS (parent_class)->src_event (trans, event);
 }
 
@@ -225,16 +220,16 @@ _init_scene (Gst3DScene * scene)
   GError *error = NULL;
   Gst3DMesh *sphere_mesh;
   Gst3DNode *sphere_node;
-  Gst3DShader *sphere_shader =
-      gst_3d_shader_new_vert_frag (context, "mvp_uv.vert",
-      "texture_uv.frag", &error);
+  // 创建着色器程序
+  Gst3DShader *sphere_shader = gst_3d_shader_new_vert_frag (context, "mvp_uv.vert", "texture_uv.frag", &error);
   if (sphere_shader == NULL) {
     GST_WARNING ("Failed to create VR compositor shaders. Error: %s", error->message);
     g_clear_error (&error);
     return; /* FIXME: Add boolean return result */
   }
 
-  sphere_mesh = gst_3d_mesh_new_sphere (context, 800.0, 100, 100);
+  // sphere_mesh = gst_3d_mesh_new_sphere (context, 1.0, 100, 100);//画球体
+  sphere_mesh = gst_3d_mesh_new_cube (context);//画立方体
   sphere_node = gst_3d_node_new_from_mesh_shader (context, sphere_mesh, sphere_shader);
   gst_3d_scene_append_node (scene, sphere_node);
 
@@ -262,16 +257,22 @@ gst_vr_compositor_init_scene (GstGLFilter * filter)
   return TRUE;
 }
 
+
 static gboolean
-gst_vr_compositor_filter_texture (GstGLFilter * filter, GstGLMemory * in_tex,
-    GstGLMemory * out_tex)
+gst_vr_compositor_filter_texture (GstGLFilter * filter, GstGLMemory * in_tex, GstGLMemory * out_tex)
 {
   GstVRCompositor *self = GST_VR_COMPOSITOR (filter);
 
-  self->in_tex = in_tex;
+  // RUN_TIME_COUNT(210);
 
-  gst_gl_framebuffer_draw_to_texture (filter->fbo, out_tex,
-      gst_vr_compositor_draw, (gpointer) self);
+  self->in_tex = in_tex;
+  // 执行在func中输出 glDraw* 命令所需的步骤更新mem的内容。
+  // 返回：执行func(gst_hmd_warp_draw)的结果
+  // RUN_TIME_BEGIN();
+  gst_gl_framebuffer_draw_to_texture (filter->fbo, //GstGLFramebuffer *fb: GstGLFramebuffer 指针,設置為 0 ，不繪製，屏幕黑
+                                      out_tex,                //GstGLMemory *mem: 要绘制的GstGLMemory
+                                      gst_vr_compositor_draw, //GstGLFramebufferFunc func: 要运行的函数
+                                      (gpointer) self);       //gpointer user_data: 要传递给func(gst_hmd_warp_draw)的数据
 
   return TRUE;
 }

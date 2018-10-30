@@ -29,30 +29,28 @@
 #include "gstvrtestsrc.h"
 #include "gstpointcloudbuilder.h"
 
+// which is called as soon as the plugin is loaded
 static gboolean
 plugin_init (GstPlugin * plugin)
 {
-  if (!gst_element_register (plugin, "vrcompositor", GST_RANK_NONE,
-          gst_vr_compositor_get_type ()))
+  if (!gst_element_register (plugin, "vrcompositor", GST_RANK_NONE, gst_vr_compositor_get_type ()))
     return FALSE;
 
-  if (!gst_element_register (plugin, "vrtestsrc", GST_RANK_NONE,
-          gst_vr_test_src_get_type ()))
+  if (!gst_element_register (plugin, "vrtestsrc", GST_RANK_NONE, gst_vr_test_src_get_type ()))
     return FALSE;
 
-  if (!gst_element_register (plugin, "hmdwarp", GST_RANK_NONE,
-          gst_hmd_warp_get_type ()))
+  if (!gst_element_register (plugin, "hmdwarp", GST_RANK_NONE, gst_hmd_warp_get_type ()))
     return FALSE;
 
-  if (!gst_element_register (plugin, "pointcloudbuilder", GST_RANK_NONE,
-          gst_point_cloud_builder_get_type ()))
+  if (!gst_element_register (plugin, "pointcloudbuilder", GST_RANK_NONE, gst_point_cloud_builder_get_type ()))
     return FALSE;
 
   return TRUE;
 }
 
-GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
-    GST_VERSION_MINOR,
-    vrplugins,
-    "GStreamer VR Plugins",
-    plugin_init, VERSION, "LGPL", PACKAGE_NAME, GST_PACKAGE_ORIGIN)
+GST_PLUGIN_DEFINE (
+  GST_VERSION_MAJOR,
+  GST_VERSION_MINOR,
+  vrplugins,
+  "GStreamer VR Plugins",
+  plugin_init, VERSION, "LGPL", PACKAGE_NAME, GST_PACKAGE_ORIGIN)

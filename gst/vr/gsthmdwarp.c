@@ -59,29 +59,24 @@ enum
 G_DEFINE_TYPE_WITH_CODE (GstHmdWarp, gst_hmd_warp,
     GST_TYPE_GL_FILTER, DEBUG_INIT);
 
-static void gst_hmd_warp_set_property (GObject * object, guint prop_id,
-    const GValue * value, GParamSpec * pspec);
-static void gst_hmd_warp_get_property (GObject * object, guint prop_id,
-    GValue * value, GParamSpec * pspec);
+static void gst_hmd_warp_set_property (GObject * object, guint prop_id, const GValue * value, GParamSpec * pspec);
+static void gst_hmd_warp_get_property (GObject * object, guint prop_id, GValue * value, GParamSpec * pspec);
 
-static gboolean gst_hmd_warp_set_caps (GstGLFilter * filter,
-    GstCaps * incaps, GstCaps * outcaps);
+static gboolean gst_hmd_warp_set_caps (GstGLFilter * filter, GstCaps * incaps, GstCaps * outcaps);
 
 static void gst_hmd_warp_gl_stop (GstGLBaseFilter * filter);
 static gboolean gst_hmd_warp_stop (GstBaseTransform * trans);
 static gboolean gst_hmd_warp_init_gl (GstGLFilter * filter);
 static gboolean gst_hmd_warp_draw (gpointer stuff);
 
-static gboolean gst_hmd_warp_filter_texture (GstGLFilter * filter,
-    GstGLMemory * in_tex, GstGLMemory * out_tex);
+static gboolean gst_hmd_warp_filter_texture (GstGLFilter * filter, GstGLMemory * in_tex, GstGLMemory * out_tex);
 
 static void
 gst_hmd_warp_class_init (GstHmdWarpClass * klass)
 {
   GObjectClass *gobject_class;
   GstElementClass *element_class;
-  GstBaseTransformClass *base_transform_class =
-      GST_BASE_TRANSFORM_CLASS (klass);
+  GstBaseTransformClass *base_transform_class = GST_BASE_TRANSFORM_CLASS (klass);
 
   gobject_class = (GObjectClass *) klass;
   element_class = GST_ELEMENT_CLASS (klass);
@@ -115,8 +110,7 @@ gst_hmd_warp_init (GstHmdWarp * self)
 }
 
 static void
-gst_hmd_warp_set_property (GObject * object, guint prop_id,
-    const GValue * value, GParamSpec * pspec)
+gst_hmd_warp_set_property (GObject * object, guint prop_id, const GValue * value, GParamSpec * pspec)
 {
   switch (prop_id) {
     default:
@@ -127,8 +121,7 @@ gst_hmd_warp_set_property (GObject * object, guint prop_id,
 
 
 static void
-gst_hmd_warp_get_property (GObject * object, guint prop_id,
-    GValue * value, GParamSpec * pspec)
+gst_hmd_warp_get_property (GObject * object, guint prop_id, GValue * value, GParamSpec * pspec)
 {
   switch (prop_id) {
     default:
@@ -138,8 +131,7 @@ gst_hmd_warp_get_property (GObject * object, guint prop_id,
 }
 
 static gboolean
-gst_hmd_warp_set_caps (GstGLFilter * filter, GstCaps * incaps,
-    GstCaps * outcaps)
+gst_hmd_warp_set_caps (GstGLFilter * filter, GstCaps * incaps, GstCaps * outcaps)
 {
   GstHmdWarp *self = GST_HMD_WARP (filter);
 
@@ -147,9 +139,7 @@ gst_hmd_warp_set_caps (GstGLFilter * filter, GstCaps * incaps,
       (gdouble) GST_VIDEO_INFO_WIDTH (&filter->out_info),
       (gdouble) GST_VIDEO_INFO_HEIGHT (&filter->out_info));
 
-  self->aspect =
-      graphene_vec2_get_x (&self->screen_size) /
-      graphene_vec2_get_y (&self->screen_size);
+  self->aspect = graphene_vec2_get_x (&self->screen_size) / graphene_vec2_get_y (&self->screen_size);
 
   GST_DEBUG ("caps change, res: %dx%d",
       GST_VIDEO_INFO_WIDTH (&filter->out_info),
@@ -220,15 +210,18 @@ handle_error:
 }
 
 static gboolean
-gst_hmd_warp_filter_texture (GstGLFilter * filter, GstGLMemory * in_tex,
-    GstGLMemory * out_tex)
+gst_hmd_warp_filter_texture (GstGLFilter * filter, GstGLMemory * in_tex, GstGLMemory * out_tex)
 {
   GstHmdWarp *self = GST_HMD_WARP (filter);
 
-  self->in_tex = in_tex;
+  // RUN_TIME_COUNT(210);
 
-  return gst_gl_framebuffer_draw_to_texture (filter->fbo, out_tex,
+  self->in_tex = in_tex;
+  // RUN_TIME_BEGIN();
+  gst_gl_framebuffer_draw_to_texture (filter->fbo, out_tex,
       gst_hmd_warp_draw, (gpointer) self);
+  // RUN_TIME_END();
+  return TRUE;
 }
 
 static gboolean
@@ -244,8 +237,7 @@ gst_hmd_warp_draw (gpointer this)
   gl->BindTexture (GL_TEXTURE_2D, self->in_tex->tex_id);
 
   graphene_matrix_t projection_ortho;
-  graphene_matrix_init_ortho (&projection_ortho, -self->aspect, self->aspect,
-      -1.0, 1.0, -1.0, 1.0);
+  graphene_matrix_init_ortho (&projection_ortho, -self->aspect, self->aspect, -1.0, 1.0, -1.0, 1.0);
   gst_3d_shader_upload_matrix (self->shader, &projection_ortho, "mvp");
   gst_3d_mesh_bind (self->render_plane);
   gst_3d_mesh_draw (self->render_plane);
