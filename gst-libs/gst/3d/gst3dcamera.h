@@ -36,6 +36,37 @@ G_BEGIN_DECLS
 typedef struct _Gst3DCamera Gst3DCamera;
 typedef struct _Gst3DCameraClass Gst3DCameraClass;
 
+#define RUN_TIME_BEGIN()  clock_t begin = clock(); \
+                          do{}while(0)
+#define RUN_TIME_END()    clock_t end = clock(); \
+                          g_print ("%s (%f ms)\n",  __FUNCTION__, (double)(end - begin) / CLOCKS_PER_SEC * 1000);\
+                          do{}while(0)
+
+#define RUN_TIME_COUNT(number)    \
+                          static clock_t last##__LINE__ = 0; \
+                          static clock_t max##__LINE__ = 0; \
+                          static clock_t min##__LINE__ = -1; \
+                          static clock_t avg##__LINE__ = 0; \
+                          static uint32_t count##__LINE__; \
+                          clock_t curr##__LINE__; \
+                          clock_t diff##__LINE__; \
+                          if(!last##__LINE__) last##__LINE__ = clock(); \
+                          else { \
+                            curr##__LINE__ = clock(); \
+                            diff##__LINE__ = curr##__LINE__ - last##__LINE__; \
+                            last##__LINE__ = curr##__LINE__; \
+                            if(diff##__LINE__ > max##__LINE__) max##__LINE__ = diff##__LINE__; \
+                            if(diff##__LINE__ < min##__LINE__) min##__LINE__ = diff##__LINE__; \
+                            avg##__LINE__ += diff##__LINE__; \
+                            if(count##__LINE__ == number) { \
+                              g_print ("%s<%d> max(%fms) min(%fms) avg(%fms)\n",  __FUNCTION__, __LINE__, (double)(max##__LINE__) / CLOCKS_PER_SEC * 1000, (double)(min##__LINE__) / CLOCKS_PER_SEC * 1000, (double)(avg##__LINE__) / CLOCKS_PER_SEC * 1000 / number);\
+                              avg##__LINE__ = 0; \
+                              count##__LINE__ = 0; \
+                            } \
+                            count##__LINE__++; \
+                          } \
+                          do{}while(0)
+
 struct _Gst3DCamera
 {
   /*< private > */
