@@ -43,8 +43,19 @@ G_DEFINE_TYPE_WITH_CODE (Gst3DCameraArcball, gst_3d_camera_arcball,
 
 
 static void gst_3d_camera_arcball_update_view (Gst3DCamera * cam);
-static void gst_3d_camera_arcball_navigation_event (Gst3DCamera * cam,
-    GstEvent * event);
+static void gst_3d_camera_arcball_navigation_event (Gst3DCamera * cam, GstEvent * event);
+static void gst_3d_camera_arcball_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
+static void gst_3d_camera_arcball_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
+
+enum PROPERTY_CAMERA {
+  PROPERTY_0,
+  PROPERTY_CENTER_DISTANCE,
+  PROPERTY_SCROLL_SPEED,
+  PROPERTY_ROTATION_SPEED,
+  PROPERTY_THETA,
+  PROPERTY_PHI,
+  N_PROPERITES
+};
 
 void
 gst_3d_camera_arcball_init (Gst3DCameraArcball * self)
@@ -85,9 +96,55 @@ gst_3d_camera_arcball_class_init (Gst3DCameraArcballClass * klass)
   // g_print ("gst_3d_camera_arcball_class_init.\n");
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
   gobject_class->finalize = gst_3d_camera_arcball_finalize;
+  gobject_class->set_property = gst_3d_camera_arcball_set_property;
+  gobject_class->get_property = gst_3d_camera_arcball_get_property;
+
   Gst3DCameraClass *camera_class = GST_3D_CAMERA_CLASS (klass);
   camera_class->update_view = gst_3d_camera_arcball_update_view;
   camera_class->navigation_event = gst_3d_camera_arcball_navigation_event;
+
+  GParamSpec *properties[N_PROPERITES] = {NULL,};
+  properties[PROPERTY_CENTER_DISTANCE] =
+    g_param_spec_float ("center_distance",
+                        "center_distance",
+                        "camera center_distance",
+                        0,
+                        G_MAXUINT,
+                        0,
+                        G_PARAM_READWRITE);
+  properties[PROPERTY_SCROLL_SPEED] =
+    g_param_spec_float ("scroll_speed",
+                        "scroll_speed",
+                        "camera scroll_speed",
+                        0,
+                        G_MAXUINT,
+                        0,
+                        G_PARAM_READWRITE);
+  properties[PROPERTY_ROTATION_SPEED] =
+    g_param_spec_float ("rotation_speed",
+                        "rotation_speed",
+                        "camera rotation_speed",
+                        0,
+                        G_MAXUINT,
+                        0,
+                        G_PARAM_READWRITE);
+  properties[PROPERTY_THETA] =
+    g_param_spec_float ("theta",
+                        "theta",
+                        "camera theta",
+                        0,
+                        G_MAXUINT,
+                        0,
+                        G_PARAM_READWRITE);
+  properties[PROPERTY_PHI] =
+    g_param_spec_float ("phi",
+                        "phi",
+                        "camera phi",
+                        0,
+                        G_MAXUINT,
+                        0,
+                        G_PARAM_READWRITE);
+  g_object_class_install_properties (gobject_class, N_PROPERITES, properties);
 }
 
 void
@@ -217,4 +274,38 @@ gst_3d_camera_arcball_navigation_event (Gst3DCamera * cam, GstEvent * event)
   default:
     break;
   }
+}
+
+static void
+gst_3d_camera_arcball_set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec)
+{
+  // g_print ("gst_3d_camera_arcball_set_property.\n");
+  Gst3DCameraArcball *self = GST_3D_CAMERA_ARCBALL (object);
+
+  switch (property_id) {
+  case PROPERTY_CENTER_DISTANCE:
+    self->center_distance = g_value_get_float(value);
+    break;
+  case PROPERTY_SCROLL_SPEED:
+    self->scroll_speed = g_value_get_float(value);
+    break;
+  case PROPERTY_ROTATION_SPEED:
+    self->rotation_speed = g_value_get_float(value);
+    break;
+  case PROPERTY_THETA:
+    self->theta = g_value_get_float(value);
+    break;
+  case PROPERTY_PHI:
+    self->phi = g_value_get_float(value);
+    break;
+  default:
+    G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+    break;
+  }
+}
+
+static void
+gst_3d_camera_arcball_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec)
+{
+  ;
 }
