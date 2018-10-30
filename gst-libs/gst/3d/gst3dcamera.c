@@ -38,6 +38,15 @@ GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);
 G_DEFINE_TYPE_WITH_CODE (Gst3DCamera, gst_3d_camera, GST_TYPE_OBJECT,
                          GST_DEBUG_CATEGORY_INIT (gst_3d_camera_debug, "3dcamera", 0, "camera"));
 
+static void gst_3d_camera_set_property (GObject * object, guint prop_id, const GValue * value, GParamSpec * pspec);
+static void gst_3d_camera_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
+
+enum PROPERTY_CAMERA {
+  PROPERTY_0,
+  PROPERTY_FOV,
+  PROPERTY_ASPECT,
+  N_PROPERITES
+};
 
 void
 gst_3d_camera_init (Gst3DCamera * self)
@@ -68,8 +77,30 @@ gst_3d_camera_finalize (GObject * object)
 static void
 gst_3d_camera_class_init (Gst3DCameraClass * klass)
 {
+  // g_print ("gst_3d_camera_class_init.\n");
   GObjectClass *obj_class = G_OBJECT_CLASS (klass);
+  obj_class->set_property = gst_3d_camera_set_property;
+  obj_class->get_property = gst_3d_camera_get_property;
   obj_class->finalize = gst_3d_camera_finalize;
+
+  GParamSpec *properties[N_PROPERITES] = {NULL,};
+  properties[PROPERTY_FOV] =
+    g_param_spec_float ("fov",
+                        "fov",
+                        "camera fov",
+                        0,
+                        G_MAXUINT,
+                        0,
+                        G_PARAM_READWRITE);
+  properties[PROPERTY_ASPECT] =
+    g_param_spec_float ("aspect",
+                        "aspect",
+                        "camera aspect",
+                        0,
+                        G_MAXUINT,
+                        0,
+                        G_PARAM_READWRITE);
+  g_object_class_install_properties (obj_class, N_PROPERITES, properties);
 }
 
 void
@@ -142,4 +173,36 @@ gst_3d_camera_print_pressed_keys (Gst3DCamera * self)
   GST_DEBUG ("Pressed keys:");
   for (l = self->pushed_buttons; l != NULL; l = l->next)
     GST_DEBUG ("%s", (const gchar *) l->data);
+}
+
+static void
+gst_3d_camera_set_property (GObject * object, guint prop_id, const GValue * value, GParamSpec * pspec)
+{
+  // g_print ("gst_3d_camera_set_property.\n");
+  Gst3DCamera *self = GST_3D_CAMERA(object);
+  switch (prop_id) {
+  case PROPERTY_FOV:
+    self->fov = g_value_get_float(value);
+    break;
+  case PROPERTY_ASPECT:
+    self->aspect = g_value_get_float(value);
+    break;
+    // case PROPERTY_ZNEAR:
+    //         if (priv->publisher)
+    //                 g_string_free (priv->publisher, TRUE);
+    //         priv->publisher = g_string_new (g_value_get_string (value));
+    //         break;
+    // case PROPERTY_FOV:
+    //         priv->year = g_value_get_uint (value);
+    break;
+  default:
+    G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+    break;
+  }
+}
+
+static void
+gst_3d_camera_get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec)
+{
+  ;
 }

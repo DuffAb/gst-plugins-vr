@@ -166,9 +166,9 @@ gst_3d_mesh_init_buffers (Gst3DMesh * self)
 
   GstGLFuncs *gl = self->context->gl_vtable;
 
-  gl->GenVertexArrays (1, &self->vao);//创建顶点数组对象(Vertex Array Object)
-  gl->BindVertexArray (self->vao);    //绑定顶点数组对象
-  gl->GenBuffers (1, &self->vbo_indices);//创建索引缓冲区对象(Element Buffer Object-EBO/Index Buffer Object-IBO)
+  gl->GenVertexArrays (1, &self->vao);//????????(Vertex Array Object)
+  gl->BindVertexArray (self->vao);    //????????
+  gl->GenBuffers (1, &self->vbo_indices);//?????????(Element Buffer Object-EBO/Index Buffer Object-IBO)
 }
 
 void
@@ -244,8 +244,8 @@ gst_3d_mesh_append_attribute_buffer (Gst3DMesh * self, const gchar * name,
 
   GstGLFuncs *gl = self->context->gl_vtable;
 
-  attrib_buffer->name = name;                   //shader中变量的名称(字符串)
-  attrib_buffer->element_size = element_size;   //每个元素的大小 eg. sizeof (GLfloat)
+  attrib_buffer->name = name;                   //shader??????(???)
+  attrib_buffer->element_size = element_size;   //??????? eg. sizeof (GLfloat)
   attrib_buffer->vector_length = vector_length; //
 
   gl->GenBuffers (1, &attrib_buffer->location);
@@ -253,11 +253,11 @@ gst_3d_mesh_append_attribute_buffer (Gst3DMesh * self, const gchar * name,
   GST_DEBUG ("generated %s buffer #%d", attrib_buffer->name, attrib_buffer->location);
 
   gl->BindBuffer (GL_ARRAY_BUFFER, attrib_buffer->location);
-  gl->BufferData (GL_ARRAY_BUFFER, //顶点数据属性
-                  self->vertex_count * attrib_buffer->vector_length * attrib_buffer->element_size, vertices, //存储数据的总数量 元素总数*单位元素存储空间
-                  GL_STATIC_DRAW);//设置分配数据之后的读取和写入方式
+  gl->BufferData (GL_ARRAY_BUFFER, //??????
+                  self->vertex_count * attrib_buffer->vector_length * attrib_buffer->element_size, vertices, //???????? ????*????????
+                  GL_STATIC_DRAW);//????????????????
 
-  self->attribute_buffers = g_list_append (self->attribute_buffers, attrib_buffer);//将 attrib_buffer 添加到 attribute_buffers(GList)中
+  self->attribute_buffers = g_list_append (self->attribute_buffers, attrib_buffer);//? attrib_buffer ??? attribute_buffers(GList)?
 }
 
 void
