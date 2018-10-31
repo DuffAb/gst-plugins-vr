@@ -50,6 +50,11 @@ struct _Gst3DCameraArcball
   gfloat zoom_step;
   gfloat min_fov;
   gfloat max_fov;
+
+  graphene_matrix_t left_mvp_matrix;
+  graphene_matrix_t right_mvp_matrix;
+
+  void (*update_view_funct) (Gst3DCameraArcball *);//add by DuffAb
 };
 
 struct _Gst3DCameraArcballClass
@@ -61,7 +66,7 @@ Gst3DCameraArcball *gst_3d_camera_arcball_new (void);
 
 void gst_3d_camera_arcball_translate (Gst3DCameraArcball * self, float z);
 void gst_3d_camera_arcball_rotate (Gst3DCameraArcball * self, gdouble x, gdouble y);
-
+void gst_3d_camera_arcball_update_view_from_matrix (Gst3DCameraArcball * self);
 GType gst_3d_camera_arcball_get_type (void);
 
 G_END_DECLS
