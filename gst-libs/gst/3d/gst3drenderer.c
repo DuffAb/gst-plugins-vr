@@ -239,6 +239,7 @@ _draw_framebuffers_on_planes_shader_proj (Gst3DRenderer * self, Gst3DCamera * ca
   gl->Viewport (self->eye_width, 0, self->eye_width, self->eye_height);
   gst_3d_mesh_draw (self->render_plane);
 }
+#endif
 
 void
 gst_3d_renderer_init_stereo (Gst3DRenderer * self, Gst3DCamera * cam)
@@ -247,9 +248,14 @@ gst_3d_renderer_init_stereo (Gst3DRenderer * self, Gst3DCamera * cam)
   GError *error = NULL;
 
   GstGLFuncs *gl = self->context->gl_vtable;
+#ifdef HAVE_OPENHMD
   Gst3DCameraHmd *hmd_cam = GST_3D_CAMERA_HMD (cam);
   Gst3DHmd *hmd = hmd_cam->hmd;
   float aspect_ratio = hmd->left_aspect;
+#else
+  // Gst3DCameraArcball * arcball_cam = GST_3D_CAMERA_ARCBALL(cam);
+  float aspect_ratio = self->eye_width / self->eye_height;
+#endif
   self->render_plane = gst_3d_mesh_new_plane (self->context, aspect_ratio);
   self->shader = gst_3d_shader_new_vert_frag (self->context, "mvp_uv.vert", "texture_uv.frag", &error);
 
@@ -261,6 +267,7 @@ gst_3d_renderer_init_stereo (Gst3DRenderer * self, Gst3DCamera * cam)
 
   gst_3d_mesh_bind_shader (self->render_plane, self->shader);
 
+  // 创建framebuffer ，将id保存在left_fbo/ right_fbo 中， 创建 texture ，将id保存在left_color_tex/right_color_tex中
   _create_fbo (gl, &self->left_fbo, &self->left_color_tex, self->eye_width, self->eye_height);
   _create_fbo (gl, &self->right_fbo, &self->right_color_tex, self->eye_width, self->eye_height);
   // g_print ("eye_width eye_height (%d, %d).\n", self->eye_width, self->eye_height);
@@ -269,7 +276,7 @@ gst_3d_renderer_init_stereo (Gst3DRenderer * self, Gst3DCamera * cam)
   gst_gl_shader_set_uniform_1i (self->shader->shader, "texture", 0);
 }
 
-
+#ifdef HAVE_OPENHMD
 void
 gst_3d_renderer_init_stereo_shader_proj (Gst3DRenderer * self, Gst3DCamera * cam)
 {
