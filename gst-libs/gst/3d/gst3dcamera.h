@@ -79,6 +79,8 @@ struct _Gst3DCamera
   graphene_vec3_t center;
   graphene_vec3_t up;
 
+  graphene_vec3_t eye_right;//add by DuffAb
+
   GList *pushed_buttons;
 
   /* perspective */
