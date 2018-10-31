@@ -184,8 +184,7 @@ _draw_framebuffers_on_planes (Gst3DRenderer * self)
 
 
 static void
-_draw_framebuffers_on_planes_shader_proj (Gst3DRenderer * self,
-    Gst3DCamera * cam)
+_draw_framebuffers_on_planes_shader_proj (Gst3DRenderer * self, Gst3DCamera * cam)
 {
   GstGLFuncs *gl = self->context->gl_vtable;
 
@@ -284,9 +283,11 @@ gst_3d_renderer_draw_stereo (Gst3DRenderer * self, Gst3DScene * scene)
   gl->GetIntegerv (GL_DRAW_FRAMEBUFFER_BINDING, &bound_fbo);
   if (bound_fbo == 0)
     return;
-
+#ifdef HAVE_OPENHMD
   Gst3DCameraHmd *hmd_cam = GST_3D_CAMERA_HMD (scene->camera);
-
+#else
+  Gst3DCameraArcball * hmd_cam = GST_3D_CAMERA_ARCBALL(scene->camera);
+#endif
   /* left eye */
   _draw_eye (self, self->left_fbo, scene, &hmd_cam->left_vp_matrix);
 
