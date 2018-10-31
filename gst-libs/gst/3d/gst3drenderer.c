@@ -37,8 +37,12 @@
 #include <gst/gl/gl.h>
 
 #include "gst3drenderer.h"
+
+#ifdef HAVE_OPENHMD
 #include "gst3dhmd.h"
 #include "gst3dcamera_hmd.h"
+#endif
+
 #include "gst3dcamera_arcball.h"
 #include "gst3dscene.h"
 
@@ -128,7 +132,7 @@ _create_fbo (GstGLFuncs * gl, GLuint * fbo, GLuint * color_tex, int width, int h
 }
 
 /* stereo rendering */
-
+#ifdef HAVE_OPENHMD
 gboolean
 gst_3d_renderer_stereo_init_from_hmd (Gst3DRenderer * self, Gst3DHmd * hmd)
 {
@@ -142,6 +146,7 @@ gst_3d_renderer_stereo_init_from_hmd (Gst3DRenderer * self, Gst3DHmd * hmd)
 
   return TRUE;
 }
+#endif
 
 gboolean
 gst_3d_renderer_stero_init_from_filter (Gst3DRenderer * self, GstGLFilter * filter)
@@ -204,7 +209,7 @@ _draw_framebuffers_on_planes (Gst3DRenderer * self)
   gst_3d_mesh_draw (self->render_plane);
 }
 
-
+#ifdef HAVE_OPENHMD
 static void
 _draw_framebuffers_on_planes_shader_proj (Gst3DRenderer * self, Gst3DCamera * cam)
 {
@@ -234,8 +239,6 @@ _draw_framebuffers_on_planes_shader_proj (Gst3DRenderer * self, Gst3DCamera * ca
   gl->Viewport (self->eye_width, 0, self->eye_width, self->eye_height);
   gst_3d_mesh_draw (self->render_plane);
 }
-
-
 
 void
 gst_3d_renderer_init_stereo (Gst3DRenderer * self, Gst3DCamera * cam)
@@ -291,6 +294,7 @@ gst_3d_renderer_init_stereo_shader_proj (Gst3DRenderer * self, Gst3DCamera * cam
   gst_3d_shader_bind (self->shader);
   gst_gl_shader_set_uniform_1i (self->shader->shader, "texture", 0);
 }
+#endif
 
 void
 gst_3d_renderer_draw_stereo (Gst3DRenderer * self, Gst3DScene * scene)
@@ -326,6 +330,7 @@ gst_3d_renderer_draw_stereo (Gst3DRenderer * self, Gst3DScene * scene)
   gst_3d_scene_clear_state (scene);
 }
 
+#ifdef HAVE_OPENHMD
 void
 gst_3d_renderer_draw_stereo_shader_proj (Gst3DRenderer * self, Gst3DScene * scene)
 {
@@ -337,3 +342,4 @@ gst_3d_renderer_draw_stereo_shader_proj (Gst3DRenderer * self, Gst3DScene * scen
   gl->Clear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   _draw_framebuffers_on_planes_shader_proj (self, scene->camera);
 }
+#endif

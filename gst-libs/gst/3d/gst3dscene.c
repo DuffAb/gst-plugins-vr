@@ -210,7 +210,7 @@ gst_3d_scene_init_hmd (Gst3DScene * self)
 void
 gst_3d_scene_init_stereo_renderer (Gst3DScene * self, GstGLContext * context)
 {
-  // self->renderer = gst_3d_renderer_new (context);
+  self->renderer = gst_3d_renderer_new (context);
 #ifdef HAVE_OPENHMD
   if (GST_IS_3D_CAMERA_HMD (self->camera)) 
   {
@@ -224,7 +224,7 @@ gst_3d_scene_init_stereo_renderer (Gst3DScene * self, GstGLContext * context)
       gst_3d_renderer_init_stereo (self->renderer, self->camera);
   }
 #else
-  // gst_3d_renderer_stero_init_from_screen(self->renderer);
+  gst_3d_renderer_stero_init_from_screen(self->renderer);
 #endif
 }
 
