@@ -31,8 +31,8 @@
 #include <gst/gl/gl.h>
 
 #include "gst3dcamera_arcball.h"
-#include "gst3drenderer.h"
 #include "gst3dmath.h"
+#include "gst3drenderer.h"
 
 #define GST_CAT_DEFAULT gst_3d_camera_arcball_debug
 GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);

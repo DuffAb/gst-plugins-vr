@@ -75,8 +75,8 @@ void gst_3d_scene_clear_state (Gst3DScene * self);
 
 #ifdef HAVE_OPENHMD
 gboolean gst_3d_scene_init_hmd(Gst3DScene * self);
-void gst_3d_scene_init_stereo_renderer(Gst3DScene * self, GstGLContext * context);
 #endif
+void gst_3d_scene_init_stereo_renderer(Gst3DScene * self, GstGLContext * context);
 
 GType gst_3d_scene_get_type (void);
 

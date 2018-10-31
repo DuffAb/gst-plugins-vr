@@ -25,6 +25,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+// #include <sys/types.h>
+// #include <sys/stat.h>
+// #include <sys/mman.h>
+#include <sys/ioctl.h>
+// #include <unistd.h>
+#include <fcntl.h>
+#include <linux/fb.h>
 
 #define GST_USE_UNSTABLE_API
 #include <gst/gl/gl.h>
@@ -32,6 +39,7 @@
 #include "gst3drenderer.h"
 #include "gst3dhmd.h"
 #include "gst3dcamera_hmd.h"
+#include "gst3dcamera_arcball.h"
 #include "gst3dscene.h"
 
 #define GST_CAT_DEFAULT gst_3d_renderer_debug
@@ -145,6 +153,20 @@ gst_3d_renderer_stero_init_from_filter (Gst3DRenderer * self, GstGLFilter * filt
   self->eye_width = w;
   self->eye_height = h;
 
+  return TRUE;
+}
+
+gboolean
+gst_3d_renderer_stero_init_from_screen (Gst3DRenderer * self)
+{
+  int fd;
+  struct fb_var_screeninfo screen;
+  fd = open("/dev/fb0",O_RDWR);
+  ioctl(fd, FBIOGET_VSCREENINFO, &screen);
+  self->eye_width = screen.xres;
+  self->eye_height = screen.yres;
+
+  self->filter_aspect = (gfloat) self->eye_width / (gfloat) self->eye_height;
   return TRUE;
 }
 
@@ -305,8 +327,7 @@ gst_3d_renderer_draw_stereo (Gst3DRenderer * self, Gst3DScene * scene)
 }
 
 void
-gst_3d_renderer_draw_stereo_shader_proj (Gst3DRenderer * self,
-    Gst3DScene * scene)
+gst_3d_renderer_draw_stereo_shader_proj (Gst3DRenderer * self, Gst3DScene * scene)
 {
   GstGLFuncs *gl = self->context->gl_vtable;
 

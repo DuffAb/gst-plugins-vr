@@ -28,11 +28,12 @@
 
 #define GST_USE_UNSTABLE_API
 #include <gst/gl/gl.h>
-
 #include "gst3dscene.h"
 
 #ifdef HAVE_OPENHMD
 #include "gst3dcamera_hmd.h"
+#else
+#include "gst3dcamera_arcball.h"
 #endif
 
 bool use_shader_proj = FALSE;
@@ -107,9 +108,9 @@ gst_3d_scene_init_gl (Gst3DScene * self, GstGLContext * context)
   self->gl_init_func (self);
   self->gl_initialized = TRUE;
   gst_3d_camera_update_view (self->camera);
-#ifdef HAVE_OPENHMD
+// #ifdef HAVE_OPENHMD
   gst_3d_scene_init_stereo_renderer (self, context);
-#endif
+// #endif
 }
 
 void
@@ -204,12 +205,15 @@ gst_3d_scene_init_hmd (Gst3DScene * self)
   }
   return TRUE;
 }
+#endif
 
 void
 gst_3d_scene_init_stereo_renderer (Gst3DScene * self, GstGLContext * context)
 {
-  self->renderer = gst_3d_renderer_new (context);
-  if (GST_IS_3D_CAMERA_HMD (self->camera)) {
+  // self->renderer = gst_3d_renderer_new (context);
+#ifdef HAVE_OPENHMD
+  if (GST_IS_3D_CAMERA_HMD (self->camera)) 
+  {
     Gst3DCameraHmd *hmd_cam = GST_3D_CAMERA_HMD (self->camera);
     Gst3DHmd *hmd = hmd_cam->hmd;
     gst_3d_renderer_stereo_init_from_hmd (self->renderer, hmd);
@@ -219,8 +223,11 @@ gst_3d_scene_init_stereo_renderer (Gst3DScene * self, GstGLContext * context)
     else
       gst_3d_renderer_init_stereo (self->renderer, self->camera);
   }
-}
+#else
+  // gst_3d_renderer_stero_init_from_screen(self->renderer);
 #endif
+}
+
 
 /* element navigation */
 static void
