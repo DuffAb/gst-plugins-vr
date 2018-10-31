@@ -60,7 +60,7 @@ enum PROPERTY_CAMERA {
 void
 gst_3d_camera_arcball_init (Gst3DCameraArcball * self)
 {
-  self->center_distance = 2.5;
+  self->center_distance = 0.5;//眼睛在 半径=center_distance 的球面上移动，一直看向原点
   self->scroll_speed = 0.03;
   self->rotation_speed = 0.002;
 
@@ -70,13 +70,13 @@ gst_3d_camera_arcball_init (Gst3DCameraArcball * self)
   self->zoom_step = 0.95;
   self->min_fov = 45;
   self->max_fov = 110;
+  self->update_view_funct = &gst_3d_camera_arcball_update_view_from_matrix;
 }
 
 Gst3DCameraArcball *
 gst_3d_camera_arcball_new (void)
 {
-  Gst3DCameraArcball *camera_arcball =
-      g_object_new (GST_3D_TYPE_CAMERA_ARCBALL, NULL);
+  Gst3DCameraArcball *camera_arcball = g_object_new (GST_3D_TYPE_CAMERA_ARCBALL, NULL);
   return camera_arcball;
 }
 
@@ -104,46 +104,12 @@ gst_3d_camera_arcball_class_init (Gst3DCameraArcballClass * klass)
   camera_class->navigation_event = gst_3d_camera_arcball_navigation_event;
 
   GParamSpec *properties[N_PROPERITES] = {NULL,};
-  properties[PROPERTY_CENTER_DISTANCE] =
-    g_param_spec_float ("center_distance",
-                        "center_distance",
-                        "camera center_distance",
-                        0,
-                        G_MAXUINT,
-                        0,
-                        G_PARAM_READWRITE);
-  properties[PROPERTY_SCROLL_SPEED] =
-    g_param_spec_float ("scroll_speed",
-                        "scroll_speed",
-                        "camera scroll_speed",
-                        0,
-                        G_MAXUINT,
-                        0,
-                        G_PARAM_READWRITE);
-  properties[PROPERTY_ROTATION_SPEED] =
-    g_param_spec_float ("rotation_speed",
-                        "rotation_speed",
-                        "camera rotation_speed",
-                        0,
-                        G_MAXUINT,
-                        0,
-                        G_PARAM_READWRITE);
-  properties[PROPERTY_THETA] =
-    g_param_spec_float ("theta",
-                        "theta",
-                        "camera theta",
-                        0,
-                        G_MAXUINT,
-                        0,
-                        G_PARAM_READWRITE);
-  properties[PROPERTY_PHI] =
-    g_param_spec_float ("phi",
-                        "phi",
-                        "camera phi",
-                        0,
-                        G_MAXUINT,
-                        0,
-                        G_PARAM_READWRITE);
+  properties[PROPERTY_CENTER_DISTANCE] = g_param_spec_float ("center_distance", "center_distance", "camera center_distance", 0, G_MAXUINT, 0, G_PARAM_READWRITE);
+  properties[PROPERTY_SCROLL_SPEED]    = g_param_spec_float ("scroll_speed", "scroll_speed", "camera scroll_speed", 0, G_MAXUINT, 0, G_PARAM_READWRITE);
+  properties[PROPERTY_ROTATION_SPEED]  = g_param_spec_float ("rotation_speed", "rotation_speed", "camera rotation_speed", 0, G_MAXUINT, 0, G_PARAM_READWRITE);
+  properties[PROPERTY_THETA]           = g_param_spec_float ("theta", "theta", "camera theta", 0, G_MAXUINT, 0, G_PARAM_READWRITE);
+  properties[PROPERTY_PHI]             = g_param_spec_float ("phi", "phi", "camera phi", 0, G_MAXUINT, 0, G_PARAM_READWRITE);
+  
   g_object_class_install_properties (gobject_class, N_PROPERITES, properties);
 }
 
@@ -179,8 +145,16 @@ static void
 gst_3d_camera_arcball_update_view (Gst3DCamera * cam)
 {
   Gst3DCameraArcball *self = GST_3D_CAMERA_ARCBALL (cam);
-  float radius = exp (self->center_distance);
+  self->update_view_funct (self);
+}
 
+///add by DuffAb
+void 
+gst_3d_camera_arcball_update_view_from_matrix (Gst3DCameraArcball * self)
+{
+  Gst3DCamera * cam = GST_3D_CAMERA (self);
+  
+  float radius = exp (self->center_distance);
   GST_LOG_OBJECT (self, "arcball radius = %f fov %f", radius, cam->fov);
 
   // 确定摄像头的位置
@@ -190,12 +164,10 @@ gst_3d_camera_arcball_update_view (Gst3DCamera * cam)
       radius * sin (self->theta) * sin (self->phi));
 
   graphene_matrix_t projection_matrix;
-  graphene_matrix_init_perspective (&projection_matrix,
-      cam->fov, cam->aspect, cam->znear, cam->zfar);
+  graphene_matrix_init_perspective (&projection_matrix, cam->fov, cam->aspect, cam->znear, cam->zfar);
 
   graphene_matrix_t view_matrix;
-  graphene_matrix_init_look_at (&view_matrix, &cam->eye, &cam->center,
-      &cam->up);
+  graphene_matrix_init_look_at (&view_matrix, &cam->eye, &cam->center, &cam->up);
 
   /* fix graphene look at */
   graphene_matrix_t v_inverted;
@@ -203,7 +175,7 @@ gst_3d_camera_arcball_update_view (Gst3DCamera * cam)
   graphene_matrix_inverse (&view_matrix, &v_inverted);
   gst_3d_math_matrix_negate_component (&v_inverted, 3, 2, &v_inverted_fix);
 
-  graphene_matrix_multiply (&v_inverted_fix, &projection_matrix, &cam->mvp);
+  graphene_matrix_multiply (&v_inverted_fix, &projection_matrix, &cam->mvp);//这里更新 模型视图投影矩阵
 }
 
 static void
