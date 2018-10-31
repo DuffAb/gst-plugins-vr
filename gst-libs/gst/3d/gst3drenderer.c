@@ -167,8 +167,7 @@ _draw_framebuffers_on_planes (Gst3DRenderer * self)
   _insert_gl_debug_marker (self->context, "_draw_framebuffers_on_planes");
 
   graphene_matrix_t projection_ortho;
-  graphene_matrix_init_ortho (&projection_ortho, -self->filter_aspect,
-      self->filter_aspect, -1.0, 1.0, -1.0, 1.0);
+  graphene_matrix_init_ortho (&projection_ortho, -self->filter_aspect, self->filter_aspect, -1.0, 1.0, -1.0, 1.0);
   gst_3d_shader_upload_matrix (self->shader, &projection_ortho, "mvp");
   gst_3d_mesh_bind (self->render_plane);
 

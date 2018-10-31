@@ -184,7 +184,7 @@ gst_3d_hmd_get_matrix (Gst3DHmd * self, ohmd_float_value type)
   float matrix[16];
   graphene_matrix_t hmd_matrix;
 
-  ohmd_device_getf (self->device, type, matrix);// ´ÓÉè±¸»ñÈ¡¸¡µãÖµ
+  ohmd_device_getf (self->device, type, matrix);// ä»è®¾å¤‡è·å–æµ®ç‚¹å€¼
   graphene_matrix_init_from_float (&hmd_matrix, matrix);
   return hmd_matrix;
 }

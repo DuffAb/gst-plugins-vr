@@ -92,8 +92,8 @@ gst_vr_compositor_class_init (GstVRCompositorClass * klass)
   element_class = GST_ELEMENT_CLASS (klass);
   base_transform_class = GST_BASE_TRANSFORM_CLASS (klass);
 
-  gobject_class->set_property = gst_vr_compositor_set_property;//element ÊôĞÔÉèÖÃº¯Êı
-  gobject_class->get_property = gst_vr_compositor_get_property;//element ÊôĞÔ»ñÈ¡º¯Êı
+  gobject_class->set_property = gst_vr_compositor_set_property;//element å±æ€§è®¾ç½®å‡½æ•°
+  gobject_class->get_property = gst_vr_compositor_get_property;//element å±æ€§è·å–å‡½æ•°
 
   base_transform_class->src_event = gst_vr_compositor_src_event;
 
@@ -105,12 +105,12 @@ gst_vr_compositor_class_init (GstVRCompositorClass * klass)
   GST_GL_FILTER_CLASS (klass)->filter_texture = gst_vr_compositor_filter_texture;
   GST_BASE_TRANSFORM_CLASS (klass)->stop = gst_vr_compositor_stop;
 
-  // ´Ëº¯Êı½öÓÃÓÚ_class_initº¯Êı,ÉèÖÃGstElementClassµÄÏêÏ¸ĞÅÏ¢¡£
-  gst_element_class_set_metadata (element_class, //GstElementClass *klass: ÓÃÓÚÉèÖÃÔªÊı¾İµÄÀà
-                                  "VR compositor",          //const gchar *longname: elementµÄ³¤Ó¢ÎÄÃû³Æ¡£ E.g. "File Sink"
-                                  "Filter/Effect/Video",    //const gchar *classification:ÃèÊöÔªËØÀàĞÍµÄ×Ö·û´®£¬×÷ÎªÓÃĞ±¸Ü£¨'/'£©·Ö¸ôµÄÎŞĞòÁĞ±íÀıÈç£º"Sink / File"
-                                  "Transform video for VR", //const gchar *description:¾ä×ÓÃèÊöÔªËØµÄÄ¿µÄ¡£ ÀıÈç£º"Write stream to a file"
-                                  "Lubosz Sarnecki <lubosz.sarnecki@collabora.co.uk>\n");//const gchar *author£º×÷ÕßµÄĞÕÃûºÍÁªÏµ·½Ê½
+  // æ­¤å‡½æ•°ä»…ç”¨äº_class_initå‡½æ•°,è®¾ç½®GstElementClassçš„è¯¦ç»†ä¿¡æ¯ã€‚
+  gst_element_class_set_metadata (element_class, //GstElementClass *klass: ç”¨äºè®¾ç½®å…ƒæ•°æ®çš„ç±»
+                                  "VR compositor",          //const gchar *longname: elementçš„é•¿è‹±æ–‡åç§°ã€‚ E.g. "File Sink"
+                                  "Filter/Effect/Video",    //const gchar *classification:æè¿°å…ƒç´ ç±»å‹çš„å­—ç¬¦ä¸²ï¼Œä½œä¸ºç”¨æ–œæ ï¼ˆ'/'ï¼‰åˆ†éš”çš„æ— åºåˆ—è¡¨ä¾‹å¦‚ï¼š"Sink / File"
+                                  "Transform video for VR", //const gchar *description:å¥å­æè¿°å…ƒç´ çš„ç›®çš„ã€‚ ä¾‹å¦‚ï¼š"Write stream to a file"
+                                  "Lubosz Sarnecki <lubosz.sarnecki@collabora.co.uk>\n");//const gchar *authorï¼šä½œè€…çš„å§“åå’Œè”ç³»æ–¹å¼
 
   GST_GL_BASE_FILTER_CLASS (klass)->supported_gl_api = GST_GL_API_OPENGL3;
 }
@@ -152,8 +152,10 @@ gst_vr_compositor_set_caps (GstGLFilter * filter, GstCaps * incaps, GstCaps * ou
 
   if (!self->scene) {
 #ifdef HAVE_OPENHMD
+    g_print ("HAVE_OPENHMD\n");
     Gst3DCamera *cam = GST_3D_CAMERA (gst_3d_camera_hmd_new ());
 #else
+    g_print ("DO NOT HAVE_OPENHMD\n");
     Gst3DCamera *cam = GST_3D_CAMERA (gst_3d_camera_arcball_new ());
 //    Gst3DCamera *cam = GST_3D_CAMERA (gst_3d_camera_wasd_new ());
 #endif
@@ -220,7 +222,7 @@ _init_scene (Gst3DScene * scene)
   GError *error = NULL;
   Gst3DMesh *sphere_mesh;
   Gst3DNode *sphere_node;
-  // ´´½¨×ÅÉ«Æ÷³ÌĞò
+  // Â´Â´Â½Â¨Ã—Ã…Ã‰Â«Ã†Ã·Â³ÃŒÃÃ²
   Gst3DShader *sphere_shader = gst_3d_shader_new_vert_frag (context, "mvp_uv.vert", "texture_uv.frag", &error);
   if (sphere_shader == NULL) {
     GST_WARNING ("Failed to create VR compositor shaders. Error: %s", error->message);
@@ -228,8 +230,8 @@ _init_scene (Gst3DScene * scene)
     return; /* FIXME: Add boolean return result */
   }
 
-  // sphere_mesh = gst_3d_mesh_new_sphere (context, 1.0, 100, 100);//»­ÇòÌå
-  sphere_mesh = gst_3d_mesh_new_cube (context);//»­Á¢·½Ìå
+  sphere_mesh = gst_3d_mesh_new_sphere (context, 1.0, 100, 100);//çƒ
+  //sphere_mesh = gst_3d_mesh_new_cube (context);//ç”»ç«‹æ–¹ä½“
   sphere_node = gst_3d_node_new_from_mesh_shader (context, sphere_mesh, sphere_shader);
   gst_3d_scene_append_node (scene, sphere_node);
 
@@ -266,13 +268,13 @@ gst_vr_compositor_filter_texture (GstGLFilter * filter, GstGLMemory * in_tex, Gs
   // RUN_TIME_COUNT(210);
 
   self->in_tex = in_tex;
-  // Ö´ĞĞÔÚfuncÖĞÊä³ö glDraw* ÃüÁîËùĞèµÄ²½Öè¸üĞÂmemµÄÄÚÈİ¡£
-  // ·µ»Ø£ºÖ´ĞĞfunc(gst_hmd_warp_draw)µÄ½á¹û
+  // æ‰§è¡Œåœ¨funcä¸­è¾“å‡º glDraw* å‘½ä»¤æ‰€éœ€çš„æ­¥éª¤æ›´æ–°memçš„å†…å®¹ã€‚
+  // è¿”å›ï¼šæ‰§è¡Œfunc(gst_hmd_warp_draw)çš„ç»“æœ
   // RUN_TIME_BEGIN();
-  gst_gl_framebuffer_draw_to_texture (filter->fbo, //GstGLFramebuffer *fb: GstGLFramebuffer Ö¸Õë,ÔOÖÃé 0 £¬²»ÀLÑu£¬ÆÁÄ»ºÚ
-                                      out_tex,                //GstGLMemory *mem: Òª»æÖÆµÄGstGLMemory
-                                      gst_vr_compositor_draw, //GstGLFramebufferFunc func: ÒªÔËĞĞµÄº¯Êı
-                                      (gpointer) self);       //gpointer user_data: Òª´«µİ¸øfunc(gst_hmd_warp_draw)µÄÊı¾İ
+  gst_gl_framebuffer_draw_to_texture (filter->fbo, //GstGLFramebuffer *fb: GstGLFramebuffer æŒ‡é’ˆ,è¨­ç½®ç‚º 0 ï¼Œä¸ç¹ªè£½ï¼Œå±å¹•é»‘
+                                      out_tex,                //GstGLMemory *mem: è¦ç»˜åˆ¶çš„GstGLMemory
+                                      gst_vr_compositor_draw, //GstGLFramebufferFunc func: è¦è¿è¡Œçš„å‡½æ•°
+                                      (gpointer) self);       //gpointer user_data: è¦ä¼ é€’ç»™func(gst_hmd_warp_draw)çš„æ•°æ®
 
   return TRUE;
 }

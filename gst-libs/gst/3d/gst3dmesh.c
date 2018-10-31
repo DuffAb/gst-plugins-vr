@@ -56,8 +56,7 @@ gst_3d_mesh_new (GstGLContext * context)
 }
 
 Gst3DMesh *
-gst_3d_mesh_new_sphere (GstGLContext * context, float radius, unsigned stacks,
-                        unsigned slices)
+gst_3d_mesh_new_sphere (GstGLContext * context, float radius, unsigned stacks, unsigned slices)
 {
   g_return_val_if_fail (GST_IS_GL_CONTEXT (context), NULL);
   Gst3DMesh *mesh = gst_3d_mesh_new (context);

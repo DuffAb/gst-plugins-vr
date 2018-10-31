@@ -159,15 +159,15 @@ void
 gst_3d_camera_hmd_update_view_from_matrix (Gst3DCameraHmd * self)
 {
   // g_print ("gst_3d_camera_hmd_update_view_from_matrix.\n");
-  graphene_matrix_t left_eye_model_view = gst_3d_hmd_get_matrix (self->hmd, // Éè±¸¾ä±ú, ÓÃÓÚ»ñÈ¡Êı¾İ
-    OHMD_LEFT_EYE_GL_MODELVIEW_MATRIX);// Ò»¸ö¡°ËæÊ±¿ÉÓÃ¡±µÄOpenGLÑùÊ½4x4¾ØÕó£¬´øÓĞÓÃÓÚHMD×óÑÛµÄÄ£ĞÍÊÓÍ¼¾ØÕó
-  graphene_matrix_t left_eye_projection = gst_3d_hmd_get_matrix (self->hmd, // Éè±¸¾ä±ú, ÓÃÓÚ»ñÈ¡Êı¾İ
-    OHMD_LEFT_EYE_GL_PROJECTION_MATRIX);// Ò»¸ö¡°ËæÊ±¿ÉÓÃ¡±µÄOpenGLÑùÊ½4x4¾ØÕó£¬´øÓĞÓÃÓÚHMD×óÑÛµÄÍ¶Ó°¾ØÕó¡£
+  graphene_matrix_t left_eye_model_view = gst_3d_hmd_get_matrix (self->hmd, // è®¾å¤‡å¥æŸ„, ç”¨äºè·å–æ•°æ®
+    OHMD_LEFT_EYE_GL_MODELVIEW_MATRIX);// ä¸€ä¸ªâ€œéšæ—¶å¯ç”¨â€çš„OpenGLæ ·å¼4x4çŸ©é˜µï¼Œå¸¦æœ‰ç”¨äºHMDå·¦çœ¼çš„æ¨¡å‹è§†å›¾çŸ©é˜µ
+  graphene_matrix_t left_eye_projection = gst_3d_hmd_get_matrix (self->hmd, // è®¾å¤‡å¥æŸ„, ç”¨äºè·å–æ•°æ®
+    OHMD_LEFT_EYE_GL_PROJECTION_MATRIX);// ä¸€ä¸ªâ€œéšæ—¶å¯ç”¨â€çš„OpenGLæ ·å¼4x4çŸ©é˜µï¼Œå¸¦æœ‰ç”¨äºHMDå·¦çœ¼çš„æŠ•å½±çŸ©é˜µã€‚
 
-  graphene_matrix_t right_eye_model_view = gst_3d_hmd_get_matrix (self->hmd, // Éè±¸¾ä±ú, ÓÃÓÚ»ñÈ¡Êı¾İ
-    OHMD_RIGHT_EYE_GL_MODELVIEW_MATRIX);// Ò»¸ö¡°ËæÊ±¿ÉÓÃ¡±µÄOpenGLÑùÊ½4x4¾ØÕó£¬´øÓĞÓÃÓÚHMDÓÒÑÛµÄÄ£ĞÍÊÓÍ¼¾ØÕó
-  graphene_matrix_t right_eye_projection = gst_3d_hmd_get_matrix (self->hmd, // Éè±¸¾ä±ú, ÓÃÓÚ»ñÈ¡Êı¾İ
-    OHMD_RIGHT_EYE_GL_PROJECTION_MATRIX);// Ò»¸ö¡°ËæÊ±¿ÉÓÃ¡±µÄOpenGLÑùÊ½4x4¾ØÕó£¬´øÓĞÓÃÓÚHMDÓÒÑÛµÄÍ¶Ó°¾ØÕó¡£
+  graphene_matrix_t right_eye_model_view = gst_3d_hmd_get_matrix (self->hmd, // è®¾å¤‡å¥æŸ„, ç”¨äºè·å–æ•°æ®
+    OHMD_RIGHT_EYE_GL_MODELVIEW_MATRIX);// ä¸€ä¸ªâ€œéšæ—¶å¯ç”¨â€çš„OpenGLæ ·å¼4x4çŸ©é˜µï¼Œå¸¦æœ‰ç”¨äºHMDå³çœ¼çš„æ¨¡å‹è§†å›¾çŸ©é˜µ
+  graphene_matrix_t right_eye_projection = gst_3d_hmd_get_matrix (self->hmd, // è®¾å¤‡å¥æŸ„, ç”¨äºè·å–æ•°æ®
+    OHMD_RIGHT_EYE_GL_PROJECTION_MATRIX);// ä¸€ä¸ªâ€œéšæ—¶å¯ç”¨â€çš„OpenGLæ ·å¼4x4çŸ©é˜µï¼Œå¸¦æœ‰ç”¨äºHMDå³çœ¼çš„æŠ•å½±çŸ©é˜µã€‚
 
   graphene_matrix_t left_eye_model_view_inv;
   graphene_matrix_t right_eye_model_view_inv;
