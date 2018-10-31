@@ -51,8 +51,8 @@ struct _Gst3DCameraArcball
   gfloat min_fov;
   gfloat max_fov;
 
-  graphene_matrix_t left_mvp_matrix;
-  graphene_matrix_t right_mvp_matrix;
+  graphene_matrix_t left_vp_matrix;
+  graphene_matrix_t right_vp_matrix;
 
   void (*update_view_funct) (Gst3DCameraArcball *);//add by DuffAb
 };

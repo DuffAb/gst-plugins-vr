@@ -60,12 +60,12 @@ enum PROPERTY_CAMERA {
 void
 gst_3d_camera_arcball_init (Gst3DCameraArcball * self)
 {
-  self->center_distance = 0.5;//眼睛在 半径=center_distance 的球面上移动，一直看向原点
+  self->center_distance = 0.8;//眼睛在 半径=center_distance 的球面上移动，一直看向原点
   self->scroll_speed = 0.03;
   self->rotation_speed = 0.002;
 
-  self->theta = 5.0;//90.0 与y轴的夹角，与center_distance结合用于确定眼睛的位置
-  self->phi = 5.0;//0.00 与x轴的夹角，与center_distance结合用于确定眼睛的位置
+  self->theta = 90.f / 180.f * M_PI;//90.0 与y轴的夹角，与center_distance结合用于确定眼睛的位置
+  self->phi   = 90.f / 180.f * M_PI;//0.00 与x轴的夹角，与center_distance结合用于确定眼睛的位置
 
   self->zoom_step = 0.95;
   self->min_fov = 45;
@@ -156,12 +156,17 @@ gst_3d_camera_arcball_update_view_from_matrix (Gst3DCameraArcball * self)
   
   float radius = exp (self->center_distance);
   GST_LOG_OBJECT (self, "arcball radius = %f fov %f", radius, cam->fov);
-
-  // 确定摄像头的位置
+  // g_print ("radius(%f), x(%f)  y(%f) z(%f).\n", radius, radius * sin (self->theta) * cos (self->phi), radius * -cos (self->theta), radius * sin (self->theta) * sin (self->phi));
+  // 确定左摄像头的位置   double sin(double x) 传入的是弧度值
   graphene_vec3_init (&cam->eye,
       radius * sin (self->theta) * cos (self->phi),
       radius * -cos (self->theta),
       radius * sin (self->theta) * sin (self->phi));
+  // 确定右摄像头的位置
+  graphene_vec3_init (&cam->eye_right,
+      radius * sin (self->theta) * cos (self->phi) * (-1.f),
+      radius * -cos (self->theta) * (-1.f),
+      radius * sin (self->theta) * sin (self->phi) * (-1.f));
 
   graphene_matrix_t projection_matrix;
   graphene_matrix_init_perspective (&projection_matrix, cam->fov, cam->aspect, cam->znear, cam->zfar);
