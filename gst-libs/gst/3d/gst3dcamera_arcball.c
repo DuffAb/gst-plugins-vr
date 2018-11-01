@@ -181,6 +181,8 @@ gst_3d_camera_arcball_update_view_from_matrix (Gst3DCameraArcball * self)
   gst_3d_math_matrix_negate_component (&v_inverted, 3, 2, &v_inverted_fix);
 
   graphene_matrix_multiply (&v_inverted_fix, &projection_matrix, &cam->mvp);//这里更新 模型视图投影矩阵
+  graphene_matrix_multiply (&v_inverted_fix, &projection_matrix, &self->left_vp_matrix);//这里更新 模型视图投影矩阵
+  graphene_matrix_multiply (&v_inverted_fix, &projection_matrix, &self->right_vp_matrix);//这里更新 模型视图投影矩阵
 }
 
 static void

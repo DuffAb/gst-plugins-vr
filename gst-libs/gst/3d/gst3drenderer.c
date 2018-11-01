@@ -143,7 +143,8 @@ gst_3d_renderer_stereo_init_from_hmd (Gst3DRenderer * self, Gst3DHmd * hmd)
   //self->filter_aspect = gst_3d_hmd_get_screen_aspect(hmd);
   self->eye_width = gst_3d_hmd_get_eye_width (hmd);
   self->eye_height = gst_3d_hmd_get_eye_height (hmd);
-
+  g_print ("gst_3d_renderer_stereo_init_from_hmd eye_width(%d) eye_height(%d) filter_aspect(%f) .\n", 
+    self->eye_width, self->eye_height, self->filter_aspect);
   return TRUE;
 }
 #endif
@@ -157,7 +158,8 @@ gst_3d_renderer_stero_init_from_filter (Gst3DRenderer * self, GstGLFilter * filt
   self->filter_aspect = (gfloat) w / (gfloat) h;
   self->eye_width = w;
   self->eye_height = h;
-
+  g_print ("gst_3d_renderer_stero_init_from_filter eye_width(%d) eye_height(%d) filter_aspect(%f) .\n", 
+    self->eye_width, self->eye_height, self->filter_aspect);
   return TRUE;
 }
 
@@ -167,11 +169,20 @@ gst_3d_renderer_stero_init_from_screen (Gst3DRenderer * self)
   int fd;
   struct fb_var_screeninfo screen;
   fd = open("/dev/fb0",O_RDWR);
-  ioctl(fd, FBIOGET_VSCREENINFO, &screen);
-  self->eye_width = screen.xres;
-  self->eye_height = screen.yres;
+  if ((fd != -1) && (ioctl(fd, FBIOGET_VSCREENINFO, &screen) != -1))
+  {
+    self->eye_width = screen.xres;
+    self->eye_height = screen.yres;
+  }
+  else
+  {
+    self->eye_width = 1920 / 2;
+    self->eye_height = 1080;
+  }  
 
   self->filter_aspect = (gfloat) self->eye_width / (gfloat) self->eye_height;
+  g_print ("gst_3d_renderer_stero_init_from_screen eye_width(%d) eye_height(%d) filter_aspect(%f) .\n", 
+    self->eye_width, self->eye_height, self->filter_aspect);
   return TRUE;
 }
 

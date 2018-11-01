@@ -152,10 +152,8 @@ gst_vr_compositor_set_caps (GstGLFilter * filter, GstCaps * incaps, GstCaps * ou
 
   if (!self->scene) {
 #ifdef HAVE_OPENHMD
-    g_print ("HAVE_OPENHMD\n");
     Gst3DCamera *cam = GST_3D_CAMERA (gst_3d_camera_hmd_new ());
 #else
-    g_print ("DO NOT HAVE_OPENHMD\n");
     Gst3DCamera *cam = GST_3D_CAMERA (gst_3d_camera_arcball_new ());
 //    Gst3DCamera *cam = GST_3D_CAMERA (gst_3d_camera_wasd_new ());
 #endif
@@ -231,8 +229,8 @@ _init_scene (Gst3DScene * scene)
   }
 
   sphere_mesh = gst_3d_mesh_new_sphere (context, 1.0, 100, 100);//球
-  //sphere_mesh = gst_3d_mesh_new_cube (context);//画立方体
-  sphere_mesh = gst_3d_mesh_new_plane (context, 1.0);//平面
+  // sphere_mesh = gst_3d_mesh_new_cube (context);//画立方体
+  // sphere_mesh = gst_3d_mesh_new_plane (context, 1.0);//平面
   sphere_node = gst_3d_node_new_from_mesh_shader (context, sphere_mesh, sphere_shader);
   gst_3d_scene_append_node (scene, sphere_node);
 

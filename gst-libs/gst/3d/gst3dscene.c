@@ -139,7 +139,8 @@ gst_3d_scene_draw (Gst3DScene * self)
   else
     gst_3d_scene_draw_nodes (self, &self->camera->mvp);
 #else
-  gst_3d_scene_draw_nodes (self, &self->camera->mvp);
+  gst_3d_renderer_draw_stereo (self->renderer, self);
+  // gst_3d_scene_draw_nodes (self, &self->camera->mvp);
 #endif
   gst_3d_scene_clear_state (self);
 }
@@ -224,7 +225,12 @@ gst_3d_scene_init_stereo_renderer (Gst3DScene * self, GstGLContext * context)
       gst_3d_renderer_init_stereo (self->renderer, self->camera);
   }
 #else
-  gst_3d_renderer_stero_init_from_screen(self->renderer);
+  if (GST_IS_3D_CAMERA_ARCBALL (self->camera)) 
+  {
+    gst_3d_renderer_stero_init_from_screen(self->renderer);
+    gst_3d_renderer_init_stereo (self->renderer, self->camera);
+  }
+  
 #endif
 }
 
