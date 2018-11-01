@@ -85,6 +85,7 @@ gst_3d_node_class_init (Gst3DNodeClass * klass)
   obj_class->finalize = gst_3d_node_finalize;
 }
 
+// vrtestsrc 会调用此函数
 Gst3DNode *
 gst_3d_node_new_debug_axes (GstGLContext * context)
 {

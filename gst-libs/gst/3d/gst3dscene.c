@@ -28,12 +28,11 @@
 
 #define GST_USE_UNSTABLE_API
 #include <gst/gl/gl.h>
+
 #include "gst3dscene.h"
 
 #ifdef HAVE_OPENHMD
 #include "gst3dcamera_hmd.h"
-#else
-#include "gst3dcamera_arcball.h"
 #endif
 
 bool use_shader_proj = FALSE;
@@ -49,19 +48,23 @@ void
 gst_3d_scene_init (Gst3DScene * self)
 {
   self->wireframe_mode = FALSE;
-  self->camera = NULL;
+  self->camera_left = NULL;
+  self->camera_right = NULL;
   self->renderer = NULL;
   self->context = NULL;
   self->gl_initialized = FALSE;
+  // self->left_camera_out_tex = NULL;
   self->node_draw_func = &gst_3d_node_draw;
 }
 
 Gst3DScene *
-gst_3d_scene_new (Gst3DCamera * camera, void (*_init_func) (Gst3DScene *))
+gst_3d_scene_new (Gst3DCamera * camera_left, Gst3DCamera * camera_right, void (*_init_func) (Gst3DScene *))
 {
-  g_return_val_if_fail (GST_IS_3D_CAMERA (camera), NULL);
+  g_return_val_if_fail (GST_IS_3D_CAMERA (camera_left), NULL);
+  g_return_val_if_fail (GST_IS_3D_CAMERA (camera_right), NULL);
   Gst3DScene *scene = g_object_new (GST_3D_TYPE_SCENE, NULL);
-  scene->camera = gst_object_ref (camera);
+  scene->camera_left = gst_object_ref (camera_left);
+  scene->camera_right = gst_object_ref (camera_right);
   scene->gl_init_func = _init_func;
 
   return scene;
@@ -73,9 +76,14 @@ gst_3d_scene_finalize (GObject * object)
   Gst3DScene *self = GST_3D_SCENE (object);
   g_return_if_fail (self != NULL);
 
-  if (self->camera) {
-    gst_object_unref (self->camera);
-    self->camera = NULL;
+  if (self->camera_left) {
+    gst_object_unref (self->camera_left);
+    self->camera_left = NULL;
+  }
+
+  if (self->camera_right) {
+    gst_object_unref (self->camera_right);
+    self->camera_right = NULL;
   }
 
   if (self->context) {
@@ -107,15 +115,18 @@ gst_3d_scene_init_gl (Gst3DScene * self, GstGLContext * context)
   self->context = gst_object_ref (context);
   self->gl_init_func (self);
   self->gl_initialized = TRUE;
-  gst_3d_camera_update_view (self->camera);
-// #ifdef HAVE_OPENHMD
+
+  gst_3d_camera_update_view (self->camera_left);
+  gst_3d_camera_update_view (self->camera_right);
+#ifdef HAVE_OPENHMD
   gst_3d_scene_init_stereo_renderer (self, context);
-// #endif
+#endif
 }
 
 void
 gst_3d_scene_draw_nodes (Gst3DScene * self, graphene_matrix_t * mvp)
 {
+  // g_print ("gst_3d_scene_draw_nodes.\n");
   GList *l;
   for (l = self->nodes; l != NULL; l = l->next) {
     Gst3DNode *node = (Gst3DNode *) l->data;
@@ -126,21 +137,19 @@ gst_3d_scene_draw_nodes (Gst3DScene * self, graphene_matrix_t * mvp)
 }
 
 void
-gst_3d_scene_draw (Gst3DScene * self)
+gst_3d_scene_draw (Gst3DScene * self, Gst3DCamera * camera)
 {
-  gst_3d_camera_update_view (self->camera);
-
+  gst_3d_camera_update_view (camera);
 #ifdef HAVE_OPENHMD
-  if (GST_IS_3D_CAMERA_HMD (self->camera))
+  if (GST_IS_3D_CAMERA_HMD (camera))
     if (use_shader_proj)
       gst_3d_renderer_draw_stereo_shader_proj (self->renderer, self);
     else
       gst_3d_renderer_draw_stereo (self->renderer, self);
   else
-    gst_3d_scene_draw_nodes (self, &self->camera->mvp);
+    gst_3d_scene_draw_nodes (self, &camera->mvp);
 #else
-  gst_3d_renderer_draw_stereo (self->renderer, self);
-  // gst_3d_scene_draw_nodes (self, &self->camera->mvp);
+  gst_3d_scene_draw_nodes (self, &camera->mvp);
 #endif
   gst_3d_scene_clear_state (self);
 }
@@ -154,6 +163,7 @@ gst_3d_scene_append_node (Gst3DScene * self, Gst3DNode * node)
 void
 gst_3d_scene_toggle_wireframe_mode (Gst3DScene * self)
 {
+  // g_print ("gst_3d_scene_toggle_wireframe_mode.\n");
   if (self->wireframe_mode) {
     self->wireframe_mode = FALSE;
     self->node_draw_func = &gst_3d_node_draw;
@@ -166,20 +176,21 @@ gst_3d_scene_toggle_wireframe_mode (Gst3DScene * self)
 void
 gst_3d_scene_navigation_event (Gst3DScene * self, GstEvent * event)
 {
-  gst_3d_camera_navigation_event (self->camera, event);
+  gst_3d_camera_navigation_event (self->camera_left, event);
+  gst_3d_camera_navigation_event (self->camera_right, event);
 
   GstNavigationEventType event_type = gst_navigation_event_get_type (event);
   switch (event_type) {
-    case GST_NAVIGATION_EVENT_KEY_PRESS:{
-      GstStructure *structure =
-          (GstStructure *) gst_event_get_structure (event);
-      const gchar *key = gst_structure_get_string (structure, "key");
-      if (key != NULL && g_strcmp0 (key, "Tab") == 0)
-        gst_3d_scene_toggle_wireframe_mode (self);
-      break;
-    }
-    default:
-      break;
+  case GST_NAVIGATION_EVENT_KEY_PRESS: {
+    GstStructure *structure =
+      (GstStructure *) gst_event_get_structure (event);
+    const gchar *key = gst_structure_get_string (structure, "key");
+    if (key != NULL && g_strcmp0 (key, "Tab") == 0)
+      gst_3d_scene_toggle_wireframe_mode (self);
+    break;
+  }
+  default:
+    break;
   }
 }
 
@@ -199,41 +210,30 @@ gst_3d_scene_clear_state (Gst3DScene * self)
 gboolean
 gst_3d_scene_init_hmd (Gst3DScene * self)
 {
-  if (GST_IS_3D_CAMERA_HMD (self->camera)) {
-    Gst3DHmd *hmd = GST_3D_CAMERA_HMD (self->camera)->hmd;
+  if (GST_IS_3D_CAMERA_HMD (self->camera_left)) {
+    Gst3DHmd *hmd = GST_3D_CAMERA_HMD (self->camera_left)->hmd;
     if (!hmd->device)
       return FALSE;
   }
   return TRUE;
 }
-#endif
 
 void
 gst_3d_scene_init_stereo_renderer (Gst3DScene * self, GstGLContext * context)
 {
   self->renderer = gst_3d_renderer_new (context);
-#ifdef HAVE_OPENHMD
-  if (GST_IS_3D_CAMERA_HMD (self->camera)) 
-  {
-    Gst3DCameraHmd *hmd_cam = GST_3D_CAMERA_HMD (self->camera);
+  if (GST_IS_3D_CAMERA_HMD (self->camera_left)) {
+    Gst3DCameraHmd *hmd_cam = GST_3D_CAMERA_HMD (self->camera_left);
     Gst3DHmd *hmd = hmd_cam->hmd;
     gst_3d_renderer_stereo_init_from_hmd (self->renderer, hmd);
 
     if (use_shader_proj)
-      gst_3d_renderer_init_stereo_shader_proj (self->renderer, self->camera);
+      gst_3d_renderer_init_stereo_shader_proj (self->renderer, self->camera_left);
     else
-      gst_3d_renderer_init_stereo (self->renderer, self->camera);
+      gst_3d_renderer_init_stereo (self->renderer, self->camera_left);
   }
-#else
-  if (GST_IS_3D_CAMERA_ARCBALL (self->camera)) 
-  {
-    gst_3d_renderer_stero_init_from_screen(self->renderer);
-    gst_3d_renderer_init_stereo (self->renderer, self->camera);
-  }
-  
-#endif
 }
-
+#endif
 
 /* element navigation */
 static void

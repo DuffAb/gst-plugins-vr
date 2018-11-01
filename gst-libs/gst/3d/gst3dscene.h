@@ -44,13 +44,15 @@ struct _Gst3DScene
   /*< private > */
   GstObject parent;
   GstGLContext *context;
+
   gboolean gl_initialized;
-  
+
   gboolean wireframe_mode;
   void (*node_draw_func) (Gst3DNode *);
   void (*gl_init_func) (Gst3DScene *);
 
-  Gst3DCamera *camera;
+  Gst3DCamera *camera_left;
+  Gst3DCamera *camera_right;
   Gst3DRenderer *renderer;
   GList *nodes;
 };
@@ -60,7 +62,7 @@ struct _Gst3DSceneClass
   GstObjectClass parent_class;
 };
 
-Gst3DScene *gst_3d_scene_new (Gst3DCamera * camera, void (*_init_func)(Gst3DScene *));
+Gst3DScene *gst_3d_scene_new (Gst3DCamera * camera_left, Gst3DCamera * camera_right, void (*_init_func)(Gst3DScene *));
 void gst_3d_scene_append_node(Gst3DScene *self, Gst3DNode * node);
 void gst_3d_scene_toggle_wireframe_mode (Gst3DScene *self);
 void gst_3d_scene_navigation_event (Gst3DScene *self, GstEvent * event);
@@ -68,15 +70,15 @@ void gst_3d_scene_navigation_event (Gst3DScene *self, GstEvent * event);
 void gst_3d_scene_init_gl(Gst3DScene *self, GstGLContext *context);
 
 void gst_3d_scene_draw_nodes (Gst3DScene * self, graphene_matrix_t * mvp);
-void gst_3d_scene_draw (Gst3DScene * self);
+void gst_3d_scene_draw (Gst3DScene * self, Gst3DCamera * camera);
 
 void gst_3d_scene_send_eos_on_esc (GstElement * element, GstEvent * event);
 void gst_3d_scene_clear_state (Gst3DScene * self);
 
 #ifdef HAVE_OPENHMD
 gboolean gst_3d_scene_init_hmd(Gst3DScene * self);
-#endif
 void gst_3d_scene_init_stereo_renderer(Gst3DScene * self, GstGLContext * context);
+#endif
 
 GType gst_3d_scene_get_type (void);
 

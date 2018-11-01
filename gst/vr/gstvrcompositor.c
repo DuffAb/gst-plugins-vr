@@ -75,8 +75,8 @@ static gboolean gst_vr_compositor_src_event (GstBaseTransform * trans, GstEvent 
 // static void gst_vr_compositor_reset_gl (GstGLFilter * filter);
 static gboolean gst_vr_compositor_stop (GstBaseTransform * trans);
 static gboolean gst_vr_compositor_init_scene (GstGLFilter * filter);
-static gboolean gst_vr_compositor_draw (gpointer stuff);
-
+static gboolean gst_vr_compositor_draw_left (gpointer stuff);
+static gboolean gst_vr_compositor_draw_right (gpointer stuff);
 static gboolean gst_vr_compositor_filter_texture (GstGLFilter * filter, GstGLMemory * in_tex, GstGLMemory * out_tex);
 
 static void _init_scene (Gst3DScene * scene);
@@ -153,11 +153,16 @@ gst_vr_compositor_set_caps (GstGLFilter * filter, GstCaps * incaps, GstCaps * ou
   if (!self->scene) {
 #ifdef HAVE_OPENHMD
     Gst3DCamera *cam = GST_3D_CAMERA (gst_3d_camera_hmd_new ());
+    self->scene = gst_3d_scene_new (cam, cam, &_init_scene);
 #else
-    Gst3DCamera *cam = GST_3D_CAMERA (gst_3d_camera_arcball_new ());
-//    Gst3DCamera *cam = GST_3D_CAMERA (gst_3d_camera_wasd_new ());
+    Gst3DCamera *cam_left = GST_3D_CAMERA (gst_3d_camera_arcball_new (90.0, 0.0, 0.063 / 2));
+    Gst3DCamera *cam_right = GST_3D_CAMERA (gst_3d_camera_arcball_new (270.0, 0.0, 0.063 / 2));
+    // g_print ("gst_vr_compositor_set_caps cam_left->fov:%f, cam_right->fov:%f.\n", cam_left->fov, cam_right->fov);
+    self->scene = gst_3d_scene_new (cam_left, cam_right, &_init_scene);
+    // Gst3DCamera *cam = GST_3D_CAMERA (gst_3d_camera_wasd_new ());
 #endif
-    self->scene = gst_3d_scene_new (cam, &_init_scene);
+    // ³õÊ¼»¯scene, ½«camÓësceneÄÚcamera³ÉÔ±±äÁ¿¹ØÁª
+
 #ifdef HAVE_OPENHMD
     ret = gst_3d_scene_init_hmd (self->scene);
 #endif
@@ -220,7 +225,7 @@ _init_scene (Gst3DScene * scene)
   GError *error = NULL;
   Gst3DMesh *sphere_mesh;
   Gst3DNode *sphere_node;
-  // ´´½¨×ÅÉ«Æ÷³ÌÐò
+  // 创建着色器程序
   Gst3DShader *sphere_shader = gst_3d_shader_new_vert_frag (context, "mvp_uv.vert", "texture_uv.frag", &error);
   if (sphere_shader == NULL) {
     GST_WARNING ("Failed to create VR compositor shaders. Error: %s", error->message);
@@ -228,9 +233,8 @@ _init_scene (Gst3DScene * scene)
     return; /* FIXME: Add boolean return result */
   }
 
-  sphere_mesh = gst_3d_mesh_new_sphere (context, 1.0, 100, 100);//球
-  // sphere_mesh = gst_3d_mesh_new_cube (context);//画立方体
-  // sphere_mesh = gst_3d_mesh_new_plane (context, 1.0);//平面
+  // sphere_mesh = gst_3d_mesh_new_sphere (context, 1.0, 100, 100);//画球体
+  sphere_mesh = gst_3d_mesh_new_cube (context);//画立方体
   sphere_node = gst_3d_node_new_from_mesh_shader (context, sphere_mesh, sphere_shader);
   gst_3d_scene_append_node (scene, sphere_node);
 
@@ -246,9 +250,9 @@ gst_vr_compositor_init_scene (GstGLFilter * filter)
 {
   GstVRCompositor *self = GST_VR_COMPOSITOR (filter);
   GstGLContext *context = GST_GL_BASE_FILTER (filter)->context;
-
+  self->xgvrfbo = gst_gl_framebuffer_new (context);
 #ifdef HAVE_OPENHMD
-  Gst3DHmd *hmd = GST_3D_CAMERA_HMD (self->scene->camera)->hmd;
+  Gst3DHmd *hmd = GST_3D_CAMERA_HMD (self->scene->camera_left)->hmd;
   if (!hmd->device)
     return FALSE;
 #endif
@@ -270,24 +274,47 @@ gst_vr_compositor_filter_texture (GstGLFilter * filter, GstGLMemory * in_tex, Gs
   // 执行在func中输出 glDraw* 命令所需的步骤更新mem的内容。
   // 返回：执行func(gst_hmd_warp_draw)的结果
   // RUN_TIME_BEGIN();
-  gst_gl_framebuffer_draw_to_texture (filter->fbo, //GstGLFramebuffer *fb: GstGLFramebuffer 指针,設置為 0 ，不繪製，屏幕黑
+  gst_gl_framebuffer_draw_to_texture (self->xgvrfbo, //GstGLFramebuffer *fb: GstGLFramebuffer 指针,設置為 0 ，不繪製，屏幕黑
                                       out_tex,                //GstGLMemory *mem: 要绘制的GstGLMemory
-                                      gst_vr_compositor_draw, //GstGLFramebufferFunc func: 要运行的函数
+                                      gst_vr_compositor_draw_left, //GstGLFramebufferFunc func: 要运行的函数
                                       (gpointer) self);       //gpointer user_data: 要传递给func(gst_hmd_warp_draw)的数据
+  // RUN_TIME_END();
+  // gst_gl_framebuffer_draw_to_texture (filter->fbo, //GstGLFramebuffer *fb: GstGLFramebuffer 指针,設置為 0 ，不繪製，屏幕黑
+  //     out_tex,                //GstGLMemory *mem: 要绘制的GstGLMemory
+  //     gst_vr_compositor_draw_right, //GstGLFramebufferFunc func: 要运行的函数
+  //     (gpointer) self);       //gpointer user_data: 要传递给func(gst_hmd_warp_draw)的数据
 
   return TRUE;
 }
 
 static gboolean
-gst_vr_compositor_draw (gpointer this)
+gst_vr_compositor_draw_right (gpointer this)
 {
+  // g_print ("gst_vr_compositor_draw_right.\n");
+  GstVRCompositor *self = GST_VR_COMPOSITOR (this);
+  GstGLContext *context = GST_GL_BASE_FILTER (this)->context;
+  GstGLFuncs *gl = context->gl_vtable;
+
+  gl->BindTexture (GL_TEXTURE_2D, self->in_tex->tex_id);
+  // gl->Clear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  // gl->Viewport(960, 0, 960, 1080);
+  gst_3d_scene_draw (self->scene, self->scene->camera_right);
+
+  return TRUE;
+}
+
+static gboolean
+gst_vr_compositor_draw_left (gpointer this)
+{
+  // g_print ("gst_vr_compositor_draw_left.\n");
   GstVRCompositor *self = GST_VR_COMPOSITOR (this);
   GstGLContext *context = GST_GL_BASE_FILTER (this)->context;
   GstGLFuncs *gl = context->gl_vtable;
 
   gl->BindTexture (GL_TEXTURE_2D, self->in_tex->tex_id);
   gl->Clear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  gst_3d_scene_draw (self->scene);
+  // gl->Viewport(0, 0, 960, 1080);
+  gst_3d_scene_draw (self->scene, self->scene->camera_left);
 
   return TRUE;
 }

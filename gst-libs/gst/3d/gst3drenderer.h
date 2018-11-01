@@ -61,7 +61,7 @@ struct _Gst3DRenderer
   
   guint eye_width;
   guint eye_height;
-  
+  graphene_matrix_t projection_ortho;
   gfloat filter_aspect;
 };
 
@@ -83,6 +83,6 @@ void gst_3d_renderer_init_stereo_shader_proj (Gst3DRenderer * self, Gst3DCamera 
 gboolean gst_3d_renderer_stereo_init_from_hmd (Gst3DRenderer * self, Gst3DHmd * hmd);
 #endif
 gboolean gst_3d_renderer_stero_init_from_filter (Gst3DRenderer * self, GstGLFilter * filter);
-gboolean gst_3d_renderer_stero_init_from_screen (Gst3DRenderer * self);
+
 G_END_DECLS
 #endif /* __GST_3D_RENDERER_H__ */

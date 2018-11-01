@@ -135,44 +135,51 @@ gst_3d_shader_from_vert_frag (Gst3DShader * self, const gchar * vertex, const gc
   gboolean ret = FALSE;
   GstGLShader *shader = NULL;
   GstGLContext *context = self->context;
-
+  
+  //获取当前启用的OpenGL API
+  //当前可用的API可能受到正在使用的GstGLDisplay和/或所选GstGLWindow的限制
+  //返回值：可用的OpenGL API
   if (gst_gl_context_get_gl_api (context)) {
     GstGLSLStage *stage;
 
+    // 1.获取着色器编码字符串
     const gchar *vertex_src = gst_3d_shader_read (vertex);
     const gchar *fragment_src = gst_3d_shader_read (fragment);
 
-    GST_LOG_OBJECT (self, "Creating shader from vertex src %s, fragment src %s",
-        vertex_src, fragment_src);
+    GST_LOG_OBJECT (self, "Creating shader from vertex src %s, fragment src %s", vertex_src, fragment_src);
+    // 2.创建着色器程序 里面应该有 glCreateProgram() 的操作
+    shader = gst_gl_shader_new (context);//注意：必须在GL线程中调用 || 返回：一个新的空着色器
 
-    shader = gst_gl_shader_new (context);
-
-    if (!(stage = gst_glsl_stage_new_with_string (context, GL_VERTEX_SHADER,
-                GST_GLSL_VERSION_NONE, GST_GLSL_PROFILE_NONE, vertex_src))) {
+    // 3.创建顶点着色器
+    if (!(stage = gst_glsl_stage_new_with_string (context, //context： a GstGLContext
+        GL_VERTEX_SHADER,      //type：the GL enum shader stage type  着色器类型，这里是顶点着色器
+        GST_GLSL_VERSION_NONE, //version： the GstGLSLVersion
+        GST_GLSL_PROFILE_NONE, //profile： the GstGLSLProfile
+        vertex_src))) {        //str：a shader string  着色器的代码字符串
       goto print_error;
     }
-
+    // 4.编译顶点着色器并将其附着在着色器程序上
     if (!gst_gl_shader_compile_attach_stage (shader, stage, error)) {
       gst_object_unref (stage);
       goto print_error;
     }
-
+    // 5.创建片段着色器
     if (!(stage = gst_glsl_stage_new_with_string (context, GL_FRAGMENT_SHADER,
                 GST_GLSL_VERSION_NONE, GST_GLSL_PROFILE_NONE, fragment_src))) {
       goto print_error;
     }
-
+    // 6.编译片段着色器并将其附着在着色器程序上
     if (!gst_gl_shader_compile_attach_stage (shader, stage, error)) {
       gst_object_unref (stage);
       goto print_error;
     }
-
+    // 7.链接着色器程序,产生最后能执行的着色器程序
     if (!gst_gl_shader_link (shader, error)) {
       goto print_error;
     }
     if (self->shader)
       gst_object_unref (self->shader);
-    self->shader = gst_object_ref (shader);
+    self->shader = gst_object_ref (shader);//保存着色器程序id到自身结构体变量中作为返回
     ret = TRUE;
   }
 

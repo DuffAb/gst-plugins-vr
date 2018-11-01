@@ -71,15 +71,14 @@ struct _Gst3DCamera
 {
   /*< private > */
   GstObject parent;
-
   graphene_matrix_t mvp;
 
   /* position */
-  graphene_vec3_t eye;
-  graphene_vec3_t center;
-  graphene_vec3_t up;
-
-  graphene_vec3_t eye_right;//add by DuffAb
+  graphene_vec3_t eye;          //ÉãÏñ»úµÄÎ»ÖÃ position
+  graphene_vec3_t center;       //ÉãÏñ»ú¿´ÏòµÄÎ»ÖÃ Ó¦¸ÃÊÇ²»Í£¸Ä±äµÄ£¬µ«ÊÇÕâ¸öÏîÄ¿ÖÐÃ»ÓÐ¸Ä±ä£¬ÐèÒªÐÞ¸Ä front
+  graphene_vec3_t up;           //ÉãÏñ»úÏòÉÏµÄ·½Ïò
+  graphene_vec3_t world_up;     //ÊÀ½ç×ø±êÏòÉÏµÄ·½Ïò
+  graphene_vec3_t camera_right; //ÉãÏñ»úÏòÓÒµÄ·½Ïò
 
   GList *pushed_buttons;
 

@@ -121,7 +121,7 @@ gst_point_cloud_builder_init (GstPointCloudBuilder * self)
   self->render_mode = GL_TRIANGLE_STRIP;
   self->in_tex = 0;
   self->mesh = NULL;
-  self->camera = (gst_3d_camera_arcball_new ());
+  self->camera = (gst_3d_camera_arcball_new (5.0, 5.0, 2.0));
   (self->camera)->theta = 1.6 * M_PI;
   (self->camera)->phi = 2.67 * M_PI;
   (self->camera)->center_distance = 0.5;

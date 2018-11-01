@@ -46,7 +46,9 @@ typedef struct _GstVRCompositorClass GstVRCompositorClass;
 struct _GstVRCompositor
 {
   GstGLFilter filter;
-
+  GstGLFramebuffer * xgvrfbo;
+  GstGLMemory * left_camera_out_tex;
+  GstGLMemory * right_camera_out_tex;
   GstGLMemory * in_tex;
   gboolean caps_change;
 

@@ -56,7 +56,8 @@ gst_3d_mesh_new (GstGLContext * context)
 }
 
 Gst3DMesh *
-gst_3d_mesh_new_sphere (GstGLContext * context, float radius, unsigned stacks, unsigned slices)
+gst_3d_mesh_new_sphere (GstGLContext * context, float radius, unsigned stacks,
+                        unsigned slices)
 {
   g_return_val_if_fail (GST_IS_GL_CONTEXT (context), NULL);
   Gst3DMesh *mesh = gst_3d_mesh_new (context);
@@ -254,7 +255,7 @@ gst_3d_mesh_append_attribute_buffer (Gst3DMesh * self, const gchar * name,
   gl->BindBuffer (GL_ARRAY_BUFFER, attrib_buffer->location);
   gl->BufferData (GL_ARRAY_BUFFER, //顶点数据属性
                   self->vertex_count * attrib_buffer->vector_length * attrib_buffer->element_size, vertices, //存储数据的总数量 元素总数*单位元素存储空间
-                  GL_STATIC_DRAW);//设置分配数据之后的读取和写入方式
+                  GL_STATIC_DRAW);//设置分配数据之后的读取喝写入方式
 
   self->attribute_buffers = g_list_append (self->attribute_buffers, attrib_buffer);//将 attrib_buffer 添加到 attribute_buffers(GList)中
 }
@@ -284,8 +285,8 @@ gst_3d_mesh_upload_plane (Gst3DMesh * self, float aspect)
   self->vertex_count = 4;
   self->draw_mode = GL_TRIANGLE_STRIP;
 
-  gst_3d_mesh_append_attribute_buffer (self, "position", sizeof (GLfloat), 4,
-      vertices);
+  // °Ñ¶¥µãÎ»ÖÃÊý¾ÝºÍÎÆÀíÎ»ÖÃÉÏ´«GPU²¢½« buffer id µÈÐÅÏ¢´æ·ÅÔÚ self ÖÐ·µ»Ø
+  gst_3d_mesh_append_attribute_buffer (self, "position", sizeof (GLfloat), 4, vertices);
   gst_3d_mesh_append_attribute_buffer (self, "uv", sizeof (GLfloat), 2, uvs);
 
   // index
@@ -537,17 +538,17 @@ gst_3d_mesh_upload_sphere (Gst3DMesh * self, float radius, unsigned stacks, unsi
 
   GstGLFuncs *gl = self->context->gl_vtable;
 
-  self->vertex_count = (slices + 1) * stacks;
-  const int component_size = sizeof (GLfloat) * self->vertex_count;
+  self->vertex_count = (slices + 1) * stacks;//¶¥µã¸öÊý
+  const int component_size = sizeof (GLfloat) * self->vertex_count;//±£´æÊý¾ÝµÄÊý×é¿Õ¼äµÄ´óÐ¡
 
-  positions = (GLfloat *) malloc (component_size * 3);
-  uvs = (GLfloat *) malloc (component_size * 2);
+  positions = (GLfloat *) malloc (component_size * 3);//·ÖÅä¶ÔÓ¦´óÐ¡µÄÄÚ´æ¿Õ¼ä(´æ´¢¶¥µã×ø±ê)
+  uvs = (GLfloat *) malloc (component_size * 2);//·ÖÅä¶ÔÓ¦´óÐ¡µÄÄÚ´æ¿Õ¼ä(´æ´¢ÎÆÀí×ø±ê)
 
   GLfloat *v = positions;
   GLfloat *t = uvs;
 
-  float const J = 1. / (float) (stacks - 1);
-  float const I = 1. / (float) (slices - 1);
+  float const J = 1. / (float) (stacks - 1);//ÔÚ±ê×¼»¯Éè±¸×ø±ê(NDC)ÖÐÃ¿¸ö¸ñ×ÓµÄ¼äÏ¶£¿
+  float const I = 1. / (float) (slices - 1);//ÔÚ±ê×¼»¯Éè±¸×ø±ê(NDC)ÖÐÃ¿¸ö¸ñ×ÓµÄ¼äÏ¶£¿
 
   for (int i = 0; i < slices; i++) {
     float const theta = M_PI * i * I;
@@ -562,13 +563,12 @@ gst_3d_mesh_upload_sphere (Gst3DMesh * self, float radius, unsigned stacks, unsi
       *v++ = y * radius;
       *v++ = z * radius;
 
-      *t++ = j * J;
-      *t++ = i * I;
+      *t++ = j * J;//texture x Öá×ø±ê
+      *t++ = i * I;//texture y Öá×ø±ê
     }
   }
-
-  gst_3d_mesh_append_attribute_buffer (self, "position", sizeof (GLfloat), 3,
-      positions);
+  // °Ñ¶¥µãÎ»ÖÃÊý¾ÝºÍÎÆÀíÎ»ÖÃÉÏ´«GPU²¢½« buffer id µÈÐÅÏ¢´æ·ÅÔÚ self ÖÐ·µ»Ø
+  gst_3d_mesh_append_attribute_buffer (self, "position", sizeof (GLfloat), 3, positions);
   gst_3d_mesh_append_attribute_buffer (self, "uv", sizeof (GLfloat), 2, uvs);
 
   /* index */

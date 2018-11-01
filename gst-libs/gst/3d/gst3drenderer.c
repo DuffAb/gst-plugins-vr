@@ -21,29 +21,17 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-
+#include <time.h>
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-// #include <sys/types.h>
-// #include <sys/stat.h>
-// #include <sys/mman.h>
-#include <sys/ioctl.h>
-// #include <unistd.h>
-#include <fcntl.h>
-#include <linux/fb.h>
 
 #define GST_USE_UNSTABLE_API
 #include <gst/gl/gl.h>
 
 #include "gst3drenderer.h"
-
-#ifdef HAVE_OPENHMD
 #include "gst3dhmd.h"
 #include "gst3dcamera_hmd.h"
-#endif
-
-#include "gst3dcamera_arcball.h"
 #include "gst3dscene.h"
 
 #define GST_CAT_DEFAULT gst_3d_renderer_debug
@@ -73,6 +61,7 @@ gst_3d_renderer_init (Gst3DRenderer * self)
   self->eye_width = 1;
   self->eye_height = 1;
   self->filter_aspect = 1.0f;
+  graphene_matrix_init_ortho (&self->projection_ortho, -self->filter_aspect, self->filter_aspect, -1.0, 1.0, -1.0, 1.0);
 }
 
 Gst3DRenderer *
@@ -132,7 +121,7 @@ _create_fbo (GstGLFuncs * gl, GLuint * fbo, GLuint * color_tex, int width, int h
 }
 
 /* stereo rendering */
-#ifdef HAVE_OPENHMD
+
 gboolean
 gst_3d_renderer_stereo_init_from_hmd (Gst3DRenderer * self, Gst3DHmd * hmd)
 {
@@ -143,11 +132,9 @@ gst_3d_renderer_stereo_init_from_hmd (Gst3DRenderer * self, Gst3DHmd * hmd)
   //self->filter_aspect = gst_3d_hmd_get_screen_aspect(hmd);
   self->eye_width = gst_3d_hmd_get_eye_width (hmd);
   self->eye_height = gst_3d_hmd_get_eye_height (hmd);
-  g_print ("gst_3d_renderer_stereo_init_from_hmd eye_width(%d) eye_height(%d) filter_aspect(%f) .\n", 
-    self->eye_width, self->eye_height, self->filter_aspect);
+
   return TRUE;
 }
-#endif
 
 gboolean
 gst_3d_renderer_stero_init_from_filter (Gst3DRenderer * self, GstGLFilter * filter)
@@ -158,31 +145,7 @@ gst_3d_renderer_stero_init_from_filter (Gst3DRenderer * self, GstGLFilter * filt
   self->filter_aspect = (gfloat) w / (gfloat) h;
   self->eye_width = w;
   self->eye_height = h;
-  g_print ("gst_3d_renderer_stero_init_from_filter eye_width(%d) eye_height(%d) filter_aspect(%f) .\n", 
-    self->eye_width, self->eye_height, self->filter_aspect);
-  return TRUE;
-}
 
-gboolean
-gst_3d_renderer_stero_init_from_screen (Gst3DRenderer * self)
-{
-  int fd;
-  struct fb_var_screeninfo screen;
-  fd = open("/dev/fb0",O_RDWR);
-  if ((fd != -1) && (ioctl(fd, FBIOGET_VSCREENINFO, &screen) != -1))
-  {
-    self->eye_width = screen.xres;
-    self->eye_height = screen.yres;
-  }
-  else
-  {
-    self->eye_width = 1920 / 2;
-    self->eye_height = 1080;
-  }  
-
-  self->filter_aspect = (gfloat) self->eye_width / (gfloat) self->eye_height;
-  g_print ("gst_3d_renderer_stero_init_from_screen eye_width(%d) eye_height(%d) filter_aspect(%f) .\n", 
-    self->eye_width, self->eye_height, self->filter_aspect);
   return TRUE;
 }
 
@@ -200,13 +163,31 @@ _draw_eye (Gst3DRenderer * self, GLuint fbo, Gst3DScene * scene, graphene_matrix
 static void
 _draw_framebuffers_on_planes (Gst3DRenderer * self)
 {
+#if 0
+  // debug only
+  static int count = 0;
+
+  if (!begin) {
+    begin = clock();
+  }
+  /* here, do your time-consuming job */
+  if (count == 210) {
+    end = clock();
+    time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+    g_print ("_draw_framebuffers_on_planes time_spent (%f) (%5.2fFPS.)\n", time_spent, 210 / time_spent);
+
+    begin = end;
+    count = 0;
+  }
+  count++;
+#endif
   GstGLFuncs *gl = self->context->gl_vtable;
 
   _insert_gl_debug_marker (self->context, "_draw_framebuffers_on_planes");
 
-  graphene_matrix_t projection_ortho;
-  graphene_matrix_init_ortho (&projection_ortho, -self->filter_aspect, self->filter_aspect, -1.0, 1.0, -1.0, 1.0);
-  gst_3d_shader_upload_matrix (self->shader, &projection_ortho, "mvp");
+  // graphene_matrix_t projection_ortho;
+  // graphene_matrix_init_ortho (&projection_ortho, -self->filter_aspect, self->filter_aspect, -1.0, 1.0, -1.0, 1.0);
+  gst_3d_shader_upload_matrix (self->shader, &self->projection_ortho, "mvp");
   gst_3d_mesh_bind (self->render_plane);
 
   /* left framebuffer */
@@ -214,15 +195,17 @@ _draw_framebuffers_on_planes (Gst3DRenderer * self)
   gl->BindTexture (GL_TEXTURE_2D, self->left_color_tex);
   gst_3d_mesh_draw (self->render_plane);
 
+
   /* right framebuffer */
   gl->Viewport (self->eye_width, 0, self->eye_width, self->eye_height);
   gl->BindTexture (GL_TEXTURE_2D, self->right_color_tex);
   gst_3d_mesh_draw (self->render_plane);
 }
 
-#ifdef HAVE_OPENHMD
+
 static void
-_draw_framebuffers_on_planes_shader_proj (Gst3DRenderer * self, Gst3DCamera * cam)
+_draw_framebuffers_on_planes_shader_proj (Gst3DRenderer * self,
+    Gst3DCamera * cam)
 {
   GstGLFuncs *gl = self->context->gl_vtable;
 
@@ -250,7 +233,8 @@ _draw_framebuffers_on_planes_shader_proj (Gst3DRenderer * self, Gst3DCamera * ca
   gl->Viewport (self->eye_width, 0, self->eye_width, self->eye_height);
   gst_3d_mesh_draw (self->render_plane);
 }
-#endif
+
+
 
 void
 gst_3d_renderer_init_stereo (Gst3DRenderer * self, Gst3DCamera * cam)
@@ -259,14 +243,9 @@ gst_3d_renderer_init_stereo (Gst3DRenderer * self, Gst3DCamera * cam)
   GError *error = NULL;
 
   GstGLFuncs *gl = self->context->gl_vtable;
-#ifdef HAVE_OPENHMD
   Gst3DCameraHmd *hmd_cam = GST_3D_CAMERA_HMD (cam);
   Gst3DHmd *hmd = hmd_cam->hmd;
-  float aspect_ratio = hmd->left_aspect;
-#else
-  // Gst3DCameraArcball * arcball_cam = GST_3D_CAMERA_ARCBALL(cam);
-  float aspect_ratio = self->eye_width / self->eye_height;
-#endif
+  float aspect_ratio = 1.0f;//hmd->left_aspect;
   self->render_plane = gst_3d_mesh_new_plane (self->context, aspect_ratio);
   self->shader = gst_3d_shader_new_vert_frag (self->context, "mvp_uv.vert", "texture_uv.frag", &error);
 
@@ -278,7 +257,6 @@ gst_3d_renderer_init_stereo (Gst3DRenderer * self, Gst3DCamera * cam)
 
   gst_3d_mesh_bind_shader (self->render_plane, self->shader);
 
-  // 创建framebuffer ，将id保存在left_fbo/ right_fbo 中， 创建 texture ，将id保存在left_color_tex/right_color_tex中
   _create_fbo (gl, &self->left_fbo, &self->left_color_tex, self->eye_width, self->eye_height);
   _create_fbo (gl, &self->right_fbo, &self->right_color_tex, self->eye_width, self->eye_height);
   // g_print ("eye_width eye_height (%d, %d).\n", self->eye_width, self->eye_height);
@@ -287,7 +265,7 @@ gst_3d_renderer_init_stereo (Gst3DRenderer * self, Gst3DCamera * cam)
   gst_gl_shader_set_uniform_1i (self->shader->shader, "texture", 0);
 }
 
-#ifdef HAVE_OPENHMD
+
 void
 gst_3d_renderer_init_stereo_shader_proj (Gst3DRenderer * self, Gst3DCamera * cam)
 {
@@ -312,7 +290,6 @@ gst_3d_renderer_init_stereo_shader_proj (Gst3DRenderer * self, Gst3DCamera * cam
   gst_3d_shader_bind (self->shader);
   gst_gl_shader_set_uniform_1i (self->shader->shader, "texture", 0);
 }
-#endif
 
 void
 gst_3d_renderer_draw_stereo (Gst3DRenderer * self, Gst3DScene * scene)
@@ -327,11 +304,9 @@ gst_3d_renderer_draw_stereo (Gst3DRenderer * self, Gst3DScene * scene)
   gl->GetIntegerv (GL_DRAW_FRAMEBUFFER_BINDING, &bound_fbo);
   if (bound_fbo == 0)
     return;
-#ifdef HAVE_OPENHMD
-  Gst3DCameraHmd *hmd_cam = GST_3D_CAMERA_HMD (scene->camera);
-#else
-  Gst3DCameraArcball * hmd_cam = GST_3D_CAMERA_ARCBALL(scene->camera);
-#endif
+
+  Gst3DCameraHmd *hmd_cam = GST_3D_CAMERA_HMD (scene->camera_left);
+
   /* left eye */
   _draw_eye (self, self->left_fbo, scene, &hmd_cam->left_vp_matrix);
 
@@ -348,9 +323,9 @@ gst_3d_renderer_draw_stereo (Gst3DRenderer * self, Gst3DScene * scene)
   gst_3d_scene_clear_state (scene);
 }
 
-#ifdef HAVE_OPENHMD
 void
-gst_3d_renderer_draw_stereo_shader_proj (Gst3DRenderer * self, Gst3DScene * scene)
+gst_3d_renderer_draw_stereo_shader_proj (Gst3DRenderer * self,
+    Gst3DScene * scene)
 {
   GstGLFuncs *gl = self->context->gl_vtable;
 
@@ -358,6 +333,5 @@ gst_3d_renderer_draw_stereo_shader_proj (Gst3DRenderer * self, Gst3DScene * scen
 
   gst_3d_shader_bind (self->shader);
   gl->Clear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  _draw_framebuffers_on_planes_shader_proj (self, scene->camera);
+  _draw_framebuffers_on_planes_shader_proj (self, scene->camera_left);
 }
-#endif

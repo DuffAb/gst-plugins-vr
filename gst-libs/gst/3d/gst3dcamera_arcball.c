@@ -31,8 +31,8 @@
 #include <gst/gl/gl.h>
 
 #include "gst3dcamera_arcball.h"
-#include "gst3dmath.h"
 #include "gst3drenderer.h"
+#include "gst3dmath.h"
 
 #define GST_CAT_DEFAULT gst_3d_camera_arcball_debug
 GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);
@@ -57,26 +57,31 @@ enum PROPERTY_CAMERA {
   N_PROPERITES
 };
 
+
 void
 gst_3d_camera_arcball_init (Gst3DCameraArcball * self)
 {
-  self->center_distance = 0.8;//眼睛在 半径=center_distance 的球面上移动，一直看向原点
+  self->center_distance = 0.00;
   self->scroll_speed = 0.03;
   self->rotation_speed = 0.002;
 
-  self->theta = 90.f / 180.f * M_PI;//90.0 与y轴的夹角，与center_distance结合用于确定眼睛的位置
-  self->phi   = 90.f / 180.f * M_PI;//0.00 与x轴的夹角，与center_distance结合用于确定眼睛的位置
-
+  // self->theta = 5.0;//90.0 与y轴的夹角，与center_distance结合用于确定眼睛的位置
+  // self->phi = 5.0;  //0.00 与x轴的夹角，与center_distance结合用于确定眼睛的位置
+  self->Pitch = 0.0;
+  self->Yaw = -90.0;
   self->zoom_step = 0.95;
   self->min_fov = 45;
   self->max_fov = 110;
-  self->update_view_funct = &gst_3d_camera_arcball_update_view_from_matrix;
 }
 
 Gst3DCameraArcball *
-gst_3d_camera_arcball_new (void)
+gst_3d_camera_arcball_new (gfloat theta, gfloat phi, gfloat center_distance)
 {
-  Gst3DCameraArcball *camera_arcball = g_object_new (GST_3D_TYPE_CAMERA_ARCBALL, NULL);
+  Gst3DCameraArcball *camera_arcball = g_object_new (GST_3D_TYPE_CAMERA_ARCBALL,
+                                       "theta", theta,
+                                       "phi", phi,
+                                       "center_distance", center_distance,
+                                       NULL);
   return camera_arcball;
 }
 
@@ -104,12 +109,46 @@ gst_3d_camera_arcball_class_init (Gst3DCameraArcballClass * klass)
   camera_class->navigation_event = gst_3d_camera_arcball_navigation_event;
 
   GParamSpec *properties[N_PROPERITES] = {NULL,};
-  properties[PROPERTY_CENTER_DISTANCE] = g_param_spec_float ("center_distance", "center_distance", "camera center_distance", 0, G_MAXUINT, 0, G_PARAM_READWRITE);
-  properties[PROPERTY_SCROLL_SPEED]    = g_param_spec_float ("scroll_speed", "scroll_speed", "camera scroll_speed", 0, G_MAXUINT, 0, G_PARAM_READWRITE);
-  properties[PROPERTY_ROTATION_SPEED]  = g_param_spec_float ("rotation_speed", "rotation_speed", "camera rotation_speed", 0, G_MAXUINT, 0, G_PARAM_READWRITE);
-  properties[PROPERTY_THETA]           = g_param_spec_float ("theta", "theta", "camera theta", 0, G_MAXUINT, 0, G_PARAM_READWRITE);
-  properties[PROPERTY_PHI]             = g_param_spec_float ("phi", "phi", "camera phi", 0, G_MAXUINT, 0, G_PARAM_READWRITE);
-  
+  properties[PROPERTY_CENTER_DISTANCE] =
+    g_param_spec_float ("center_distance",
+                        "center_distance",
+                        "camera center_distance",
+                        0,
+                        G_MAXUINT,
+                        0,
+                        G_PARAM_READWRITE);
+  properties[PROPERTY_SCROLL_SPEED] =
+    g_param_spec_float ("scroll_speed",
+                        "scroll_speed",
+                        "camera scroll_speed",
+                        0,
+                        G_MAXUINT,
+                        0,
+                        G_PARAM_READWRITE);
+  properties[PROPERTY_ROTATION_SPEED] =
+    g_param_spec_float ("rotation_speed",
+                        "rotation_speed",
+                        "camera rotation_speed",
+                        0,
+                        G_MAXUINT,
+                        0,
+                        G_PARAM_READWRITE);
+  properties[PROPERTY_THETA] =
+    g_param_spec_float ("theta",
+                        "theta",
+                        "camera theta",
+                        0,
+                        G_MAXUINT,
+                        0,
+                        G_PARAM_READWRITE);
+  properties[PROPERTY_PHI] =
+    g_param_spec_float ("phi",
+                        "phi",
+                        "camera phi",
+                        0,
+                        G_MAXUINT,
+                        0,
+                        G_PARAM_READWRITE);
   g_object_class_install_properties (gobject_class, N_PROPERITES, properties);
 }
 
@@ -137,6 +176,14 @@ gst_3d_camera_arcball_rotate (Gst3DCameraArcball * self, gdouble x, gdouble y)
   if (next_theta_pi < 2.0 && next_theta_pi > 1.0)
     self->theta += delta_theta;
 
+  self->Yaw   += x;
+  self->Pitch += y;
+  // Make sure that when pitch is out of bounds, screen doesn't get flipped
+  if (self->Pitch > 89.0f)
+    self->Pitch = 89.0f;
+  if (self->Pitch < -89.0f)
+    self->Pitch = -89.0f;
+
   GST_DEBUG ("θ = %fπ ϕ = %fπ", self->theta / M_PI, self->phi / M_PI);
   gst_3d_camera_update_view (GST_3D_CAMERA (self));
 }
@@ -145,34 +192,37 @@ static void
 gst_3d_camera_arcball_update_view (Gst3DCamera * cam)
 {
   Gst3DCameraArcball *self = GST_3D_CAMERA_ARCBALL (cam);
-  self->update_view_funct (self);
-}
+  // float radius = exp (self->center_distance);
+  float radius = self->center_distance;
 
-///add by DuffAb
-void 
-gst_3d_camera_arcball_update_view_from_matrix (Gst3DCameraArcball * self)
-{
-  Gst3DCamera * cam = GST_3D_CAMERA (self);
-  
-  float radius = exp (self->center_distance);
   GST_LOG_OBJECT (self, "arcball radius = %f fov %f", radius, cam->fov);
-  // g_print ("radius(%f), x(%f)  y(%f) z(%f).\n", radius, radius * sin (self->theta) * cos (self->phi), radius * -cos (self->theta), radius * sin (self->theta) * sin (self->phi));
-  // 确定左摄像头的位置   double sin(double x) 传入的是弧度值
-  graphene_vec3_init (&cam->eye,
-      radius * sin (self->theta) * cos (self->phi),
-      radius * -cos (self->theta),
-      radius * sin (self->theta) * sin (self->phi));
-  // 确定右摄像头的位置
-  graphene_vec3_init (&cam->eye_right,
-      radius * sin (self->theta) * cos (self->phi) * (-1.f),
-      radius * -cos (self->theta) * (-1.f),
-      radius * sin (self->theta) * sin (self->phi) * (-1.f));
 
+  // 确定摄像头的位置
+  graphene_vec3_init (&cam->eye,
+                      radius * sin (self->theta * M_PI / 180.0) * cos (self->phi * M_PI / 180.0),
+                      radius * -cos (self->theta * M_PI / 180.0),
+                      radius * sin (self->theta * M_PI / 180.0) * sin (self->phi * M_PI / 180.0));
+  // Calculate the new Front vector 计算摄像机新的正前方向量
+  graphene_vec3_t front;
+  graphene_vec3_init (&front,
+                      cos (self->Pitch * M_PI / 180.0) * cos (self->Yaw * M_PI / 180.0),
+                      sin (self->Pitch * M_PI / 180.0),
+                      cos (self->Pitch * M_PI / 180.0) * sin (self->Yaw * M_PI / 180.0));
+  // 摄像头的正前方向量标准化
+  graphene_vec3_normalize(&front, &cam->center);
+  // 向量叉乘计算摄像机的右向量
+  graphene_vec3_cross(&cam->center, &cam->world_up, &cam->camera_right);
+  // 向量叉乘计算摄像机的上向量
+  graphene_vec3_cross(&cam->camera_right, &cam->center, &cam->up);
+
+  // 创建透视矩阵
   graphene_matrix_t projection_matrix;
   graphene_matrix_init_perspective (&projection_matrix, cam->fov, cam->aspect, cam->znear, cam->zfar);
-
+  // 创建观察矩阵
+  graphene_vec3_t target;
+  graphene_vec3_add(&cam->eye, &cam->center, &target);
   graphene_matrix_t view_matrix;
-  graphene_matrix_init_look_at (&view_matrix, &cam->eye, &cam->center, &cam->up);
+  graphene_matrix_init_look_at (&view_matrix, &cam->eye, &target, &cam->up);
 
   /* fix graphene look at */
   graphene_matrix_t v_inverted;
@@ -180,9 +230,7 @@ gst_3d_camera_arcball_update_view_from_matrix (Gst3DCameraArcball * self)
   graphene_matrix_inverse (&view_matrix, &v_inverted);
   gst_3d_math_matrix_negate_component (&v_inverted, 3, 2, &v_inverted_fix);
 
-  graphene_matrix_multiply (&v_inverted_fix, &projection_matrix, &cam->mvp);//这里更新 模型视图投影矩阵
-  graphene_matrix_multiply (&v_inverted_fix, &projection_matrix, &self->left_vp_matrix);//这里更新 模型视图投影矩阵
-  graphene_matrix_multiply (&v_inverted_fix, &projection_matrix, &self->right_vp_matrix);//这里更新 模型视图投影矩阵
+  graphene_matrix_multiply (&v_inverted_fix, &projection_matrix, &cam->mvp);
 }
 
 static void

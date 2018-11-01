@@ -113,8 +113,8 @@ _scene_geometry_init (gpointer impl, GstGLContext * context,
   self->base.context = context;
   gboolean ret = TRUE;
 
-  Gst3DCamera *cam = GST_3D_CAMERA (gst_3d_camera_arcball_new ());
-  self->scene = gst_3d_scene_new (cam, &_init_scene);
+  Gst3DCamera *cam = GST_3D_CAMERA (gst_3d_camera_arcball_new (5.0, 5.0, 2.0));
+  self->scene = gst_3d_scene_new (cam, cam, &_init_scene);
   // ret = _void_select_camera(self);
 
   gst_3d_scene_init_gl (self->scene, context);
@@ -137,7 +137,7 @@ _scene_geometry_draw (gpointer impl)
 
   gl->Enable (GL_DEPTH_TEST);
   gl->Clear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  gst_3d_scene_draw (self->scene);
+  gst_3d_scene_draw (self->scene, self->scene->camera_left);
   gl->Disable (GL_DEPTH_TEST);
 
   return TRUE;

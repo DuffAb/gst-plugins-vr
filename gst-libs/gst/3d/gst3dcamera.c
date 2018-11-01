@@ -51,17 +51,16 @@ enum PROPERTY_CAMERA {
 void
 gst_3d_camera_init (Gst3DCamera * self)
 {
-  self->fov = 45.0;
-  // self->aspect = 1080.f / 1920.f;
-  self->aspect = 1920.f / 1080.f;
+  self->fov = 55.0;
+  //self->aspect = 4.0 / 3.0;
+  self->aspect = 1.0;
   self->znear = 0.01;
   self->zfar = 1000.0;
 
   graphene_vec3_init (&self->eye, 0.f, 0.f, 1.f);
   graphene_vec3_init (&self->center, 0.f, 0.f, 0.f);
   graphene_vec3_init (&self->up, 0.f, 1.f, 0.f);
-
-  graphene_vec3_init (&self->eye_right, 0.f, 0.f, 1.f);//add by DuffAb
+  graphene_vec3_init (&self->world_up, 0.f, 1.f, 0.f);
 
   self->cursor_last_x = 0;
   self->cursor_last_y = 0;
@@ -86,9 +85,22 @@ gst_3d_camera_class_init (Gst3DCameraClass * klass)
   obj_class->finalize = gst_3d_camera_finalize;
 
   GParamSpec *properties[N_PROPERITES] = {NULL,};
-  properties[PROPERTY_FOV]    = g_param_spec_float ("fov", "fov", "camera fov", 0, G_MAXUINT, 0, G_PARAM_READWRITE);
-  properties[PROPERTY_ASPECT] = g_param_spec_float ("aspect", "aspect", "camera aspect", 0, G_MAXUINT, 0, G_PARAM_READWRITE);
-
+  properties[PROPERTY_FOV] =
+    g_param_spec_float ("fov",
+                        "fov",
+                        "camera fov",
+                        0,
+                        G_MAXUINT,
+                        0,
+                        G_PARAM_READWRITE);
+  properties[PROPERTY_ASPECT] =
+    g_param_spec_float ("aspect",
+                        "aspect",
+                        "camera aspect",
+                        0,
+                        G_MAXUINT,
+                        0,
+                        G_PARAM_READWRITE);
   g_object_class_install_properties (obj_class, N_PROPERITES, properties);
 }
 
@@ -113,10 +125,12 @@ void
 gst_3d_camera_update_view_mvp (Gst3DCamera * self)
 {
   graphene_matrix_t projection_matrix;
-  graphene_matrix_init_perspective (&projection_matrix, self->fov, self->aspect, self->znear, self->zfar);
+  graphene_matrix_init_perspective (&projection_matrix,
+                                    self->fov, self->aspect, self->znear, self->zfar);
 
   graphene_matrix_t view_matrix;
-  graphene_matrix_init_look_at (&view_matrix, &self->eye, &self->center, &self->up);
+  graphene_matrix_init_look_at (&view_matrix, &self->eye, &self->center,
+                                &self->up);
 
   graphene_matrix_multiply (&view_matrix, &projection_matrix, &self->mvp);
 }
