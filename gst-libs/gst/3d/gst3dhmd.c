@@ -145,7 +145,7 @@ gst_3d_hmd_get_device_properties (Gst3DHmd * self)
 
   ohmd_device_getf (self->device, OHMD_LEFT_EYE_ASPECT_RATIO, &self->left_aspect);
   ohmd_device_getf (self->device, OHMD_RIGHT_EYE_ASPECT_RATIO, &self->right_aspect);
-  // g_print ("gst_3d_hmd_get_device_properties (left_aspect right_aspect) (%f, %f).\n", self->left_aspect, self->right_aspect);
+  g_print ("gst_3d_hmd_get_device_properties (left_aspect right_aspect) (%f, %f).\n", self->left_aspect, self->right_aspect);
   GST_DEBUG ("Aspect Ratio (left/right): %f %f", self->left_aspect, self->right_aspect);
 
   ohmd_device_getf (self->device, OHMD_EYE_IPD, &self->interpupillary_distance);
